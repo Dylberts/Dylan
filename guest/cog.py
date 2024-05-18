@@ -12,7 +12,7 @@ class Guest(commands.Cog, name="Guest"):
         role = discord.utils.get(ctx.guild.roles, id=role_id)
         if role:
             await ctx.author.remove_roles(role)
-            await ctx.message.delete() #silent
+            #await ctx.message.delete() #silent
 
 def setup(bot):
     bot.add_cog(Guest(bot))
