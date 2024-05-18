@@ -8,7 +8,7 @@ class Guest(commands.Cog, name="Guest"):
         self.bot = bot
 
     @commands.command(name="guest", hidden=True)
-    async def remove_my_tole(self, ctx, role_id: int="1240961142554234970u"):
+    async def remove_my_tole(self, ctx, role_id: int="1240961142554234970"):
         #role = discord.utils.get(ctx.guild.roles, id=role_id)
         role = discord.utils.get(ctx.guild.roles, id=role_id)
         if role:
