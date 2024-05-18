@@ -1,15 +1,19 @@
 from redbot.core import commands
 import discord
-from discord import app_commands
+from discord.ext import commands
 
-class Guest(commands.Cog, name="Guest"):
+class Guest(commands.Cog, name="Guest, guest"):
     """Receives Guest Commands(s)"""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command()
-    async def _role(ctx, role: discord.Role):
-        if role in ctx.author.roles:
-            await ctx.send("")            
-        ctx.author.remove_roles(role)
+    @commands.command(hidden=True)
+    async def remove_my_role(self, ctx, role_id: int):
+        role = discord.utils.get(ctx.guild.roles, id=role_id)
+        if role:
+            await ctx.author.remove_roles(role)
+            await ctx.message.delete() #silent
+
+def setup(bot):
+    bot.add_cog(Guest(bot))
