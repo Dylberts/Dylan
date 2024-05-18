@@ -1,4 +1,5 @@
 from redbot.core import commands
+import discord
 
 class Guest(commands.Cog, name="Guest"):
     """Receives Guest Commands(s)"""
@@ -6,7 +7,7 @@ class Guest(commands.Cog, name="Guest"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    @commands.command() ### corrected by Flame
+    @commands.command()
     async def _role(ctx, role: discord.Role):
         if role in ctx.author.roles:
             await ctx.send("")            
