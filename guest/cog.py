@@ -9,7 +9,7 @@ class Guest(commands.Cog, name="Guest"):
     @commands.command() ### corrected by Flame
     async def _role(ctx, role: discord.Role):
         if role in ctx.author.roles:
-            await
+            #await
     ctx.author.remove_roles(role)
 
   def setup(bot: commands.Bot):
