@@ -9,9 +9,9 @@ class Guest(commands.Cog, name="Guest"):
     @commands.command() ### corrected by Flame
     async def _role(ctx, role: discord.Role):
         if role in ctx.author.roles:
-            ctx.author.remove_roles(role)
+            await ctx.send("")
             
-        #ctx.author.remove_roles(role)
+        ctx.author.remove_roles(role)
 
   def setup(bot: commands.Bot):
       bot.add_cog(Guest(bot))
