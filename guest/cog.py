@@ -1,5 +1,6 @@
 from redbot.core import commands
 import discord
+from discord import app_commands
 
 class Guest(commands.Cog, name="Guest"):
     """Receives Guest Commands(s)"""
