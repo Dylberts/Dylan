@@ -1,15 +1,16 @@
 from redbot.core import commands
 import discord
 
-class Guest(commands.Cog, name="Guest, guest"):
+class Guest(commands.Cog, name="guest"):
     """Receives Guest Commands(s)"""
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command(hidden=True)
-    async def remove_my_role(self, ctx, role_id: int):
-        role = discord.utils.get(ctx.guild.roles, id=role_id)
+    async def remove_my_tole(self, ctx, role_id: int):
+        #role = discord.utils.get(ctx.guild.roles, id=role_id)
+        role = discord.utils.get(ctx.guild.roles, '1240961142554234970'=role_id)
         if role:
             await ctx.author.remove_roles(role)
             await ctx.message.delete() #silent
