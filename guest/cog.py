@@ -10,7 +10,7 @@ class Guest(commands.Cog, name="Guest"):
     @commands.command(name="guest", hidden=True)
     async def remove_my_tole(self, ctx, role_id: int):
         #role = discord.utils.get(ctx.guild.roles, id=role_id)
-        role = discord.utils.get(ctx.guild.roles, '1240961142554234970'==role_id)
+        role = discord.utils.get(ctx.guild.roles, "1240961142554234970u"==role_id)
         if role:
             await ctx.author.remove_roles(role)
             await ctx.message.delete() #silent
