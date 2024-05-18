@@ -11,6 +11,5 @@ class Guest(commands.Cog, name="Guest"):
         if role in ctx.author.roles:
             await ctx.send("")            
         ctx.author.remove_roles(role)
-
- def setup(bot: commands.Bot):
-      bot.add_cog(Guest(bot))
+# def setup(bot: commands.Bot):
+ #     bot.add_cog(Guest(bot))
