@@ -7,7 +7,7 @@ class RoleLock(commands.Cog, name="RoleLock"):
         self.locked_role_id = 1233366060477186048 '''@Age (13-17) Role ID''' # Replace with the ID of the role you want to lock
         self.blocked_role_id = 1233366502451712074, 1233366641572712520, 1233366931302776843 '''@Age (18-25), @Age (26-35), @Age (36-48+) Role ID''' # Replace with the ID of the role you want to block 
 
-    @commands.Cog.listener()
+    @commands.Cog.listener(name=RoleLock)
     async def on_member_update(self, before, after):
         if self.locked_role_id in [role.id for role in after.roles]:
             if self.blocked_role_id in [role.id for role in after.roles]:
