@@ -5,7 +5,7 @@ class RoleLock(commands.Cog, name="RoleLock"):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.Cog.listener()
+    @commands.Cog.listener(name="RoleLock")
     async def on_member_update(self, before, after):
         # Check if the specific role has been obtained
         specific_role = discord.utils.get(after.roles, name="Age (13-17)")
