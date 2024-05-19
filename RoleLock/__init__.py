@@ -1,4 +1,4 @@
-from .cog import Guest
+from .cog import RoleLock
 
 
 async def setup(bot):
