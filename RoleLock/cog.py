@@ -4,8 +4,8 @@ import discord
 class RoleLock(commands.Cog, name="RoleLock"):
     def __init__(self, bot):
         self.bot = bot
-        self.locked_role_id = ("1233366060477186048")  # @Age (13-17) Role ID > Replace with the ID of the role you want to lock
-        self.blocked_role_ids = ("1233366502451712074", "1233366641572712520", "1233366931302776843")  # @Age (18-25), @Age (26-35), @Age (36-48+) Role ID > Replace with the ID of the role you want to block 
+        self.locked_role_id = 1233366060477186048  # @Age (13-17) Role ID > Replace with the ID of the role you want to lock
+        self.blocked_role_ids = 1233366502451712074, 1233366641572712520, 1233366931302776843  # @Age (18-25), @Age (26-35), @Age (36-48+) Role ID > Replace with the ID of the role you want to block 
 
     @commands.Cog.listener(name="RoleLock")
     async def on_member_update(self, before, after):
