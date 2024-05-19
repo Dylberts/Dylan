@@ -1,5 +1,5 @@
+from redbot.core import commands
 import discord
-from discord.ext import commands
 
 class RoleLock(commands.Cog):
     def __init__(self, bot):
