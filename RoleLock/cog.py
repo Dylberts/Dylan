@@ -1,7 +1,7 @@
 from redbot.core import commands
 import discord
 
-class RoleLock(commands.Cog):
+class RoleLock(commands.Cog, name="RoleLock"):
     def __init__(self, bot):
         self.bot = bot
         self.locked_role_id = 1234567890  # Replace with the ID of the role you want to lock
