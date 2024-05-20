@@ -9,10 +9,10 @@ class RoleLock(commands.Cog, name="RoleLock"):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        if self.locked_role_id in [role.id for role in after.roles]:
+        #if self.locked_role_id in [role.id for role in after.roles]:
             for role in after.roles:
                 if role.id in self.blocked_role_ids and self.locked_role_id in [role.id for role in after.roles]:
-                await after.remove_roles(role)
+                   await after.remove_roles(role)
                 #if role.id in self.blocked_role_ids:
                     #await after.remove_roles(role)
                     #await after.send("You cannot obtain this role while having the locked role.")
