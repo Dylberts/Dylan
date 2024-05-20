@@ -18,9 +18,9 @@ class RoleLock(commands.Cog, name="RoleLock"):
                 ###    await after.remove_roles(role)
 
 @commands.Cog.listener()
-    async def on_member_update(self, before, after):
-        if self.locked_role_id in [role.id for role in after.roles]:
-            return  # Exit the function early if the user has the locked role
+async def on_member_update(self, before, after):
+    if self.locked_role_id in [role.id for role in after.roles]:
+        return  # Exit the function early if the user has the locked role
 
         for role in after.roles:
             if role.id in self.blocked_role_ids:
