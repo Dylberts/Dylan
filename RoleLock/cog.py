@@ -17,15 +17,16 @@ class RoleLock(commands.Cog, name="RoleLock"):
     def __init__(self, bot):
         self.bot = bot
         self.locked_roles = {
-            '''@Age (13-17): [Blocked Roles: @Age (18-25), @Age (26-35), @Age (26-35), @Age (36-48+), @NSFW]'''
+            # @Age (13-17): [Blocked Roles: @Age (18-25), @Age (26-35), @Age (26-35), @Age (36-48+), @NSFW]
             1233366060477186048: [1233366502451712074, 1233366641572712520, 1233366931302776843, 1233369491447091251],
-            '''@Guild Leader: [Blocked Roles: @Guild Deputy), @Guild Elite]'''
+            # @Guild Leader: [Blocked Roles: @Guild Deputy), @Guild Elite]
             1235573502459904042: [1235798008126246983, 1235798803425132624],
-            '''@Guild Deputy: [Blocked Roles: @Guild Leader), @Guild Elite]'''
+            # @Guild Deputy: [Blocked Roles: @Guild Leader), @Guild Elite]
             1235798008126246983: [1235573502459904042, 1235798803425132624],
-            '''@Guild Elite: [Blocked Roles: @Guild Leader), @Guild Deputy]'''
+            # @Guild Elite: [Blocked Roles: @Guild Leader), @Guild Deputy]
             1235798803425132624: [1235573502459904042, 1235798008126246983],
-            # Add more entries for additional lock roles and their corresponding blocked roles
+            # NOTE: You can add more entries for additional lock roles and their corresponding blocked roles
+            # TODO: Simplify nest dictionary so it's not a massive list
         }
 
     @commands.Cog.listener()
