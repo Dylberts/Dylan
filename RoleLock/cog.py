@@ -38,7 +38,9 @@ class RoleLock(commands.Cog, name="RoleLock"):
                 for role in after.roles:
                     if role.id in blocked_role_ids:
                         await after.remove_roles(role)
-                        await after.add_roles(self.bot.get_role(locked_role_id))
+                        locked_role = discord.utils.get(after.guild.roles, id=locked_role_id)
+                        if locked_role:
+                            await after.add_roles(locked_role)
                       
             # New logic for Age roles
             age_locked_role_id = 1233366060477186048
