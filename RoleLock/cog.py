@@ -31,24 +31,24 @@ class RoleLock(commands.Cog, name="RoleLock"):
 
         }
      
-@commands.Cog.listener()
-async def on_member_update(self, before, after):
-    for locked_role_id, blocked_role_ids in self.locked_roles.items():
-        if locked_role_id in [role.id for role in after.roles]:
-            for role in after.roles:
-                if role.id in blocked_role_ids:
-                    await after.remove_roles(role)
-                    await after.add_roles(self.bot.get_role(locked_role_id))
-                  
-        # New logic for Age roles
-        age_locked_role_id = 1233366060477186048
-        age_blocked_roles = [1233366502451712074, 1233366641572712520, 1233366931302776843, 1233369491447091251]
-        if age_locked_role_id in [role.id for role in after.roles]:
-            age_locked_role = discord.utils.get(after.roles, id=age_locked_role_id)
-            for role_id in age_blocked_roles:
-                role = discord.utils.get(after.guild.roles, id=role_id)
-                if role:
-                    await after.remove_roles(role)
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        for locked_role_id, blocked_role_ids in self.locked_roles.items():
+            if locked_role_id in [role.id for role in after.roles]:
+                for role in after.roles:
+                    if role.id in blocked_role_ids:
+                        await after.remove_roles(role)
+                        await after.add_roles(self.bot.get_role(locked_role_id))
+                      
+            # New logic for Age roles
+            age_locked_role_id = 1233366060477186048
+            age_blocked_roles = [1233366502451712074, 1233366641572712520, 1233366931302776843, 1233369491447091251]
+            if age_locked_role_id in [role.id for role in after.roles]:
+                age_locked_role = discord.utils.get(after.roles, id=age_locked_role_id)
+                for role_id in age_blocked_roles:
+                    role = discord.utils.get(after.guild.roles, id=role_id)
+                    if role:
+                        await after.remove_roles(role)
 
 def setup(bot):
    bot.add_cog(RoleLock(bot))
