@@ -36,6 +36,8 @@ class RoleLock(commands.Cog, name="RoleLock"):
                 for role in after.roles:
                     if role.id in blocked_role_ids:
                         await after.remove_roles(role)
-   
+                        embed = discord.Embed(title="Role Blocked", description=f"You cannot obtain this role while having the role with ID {role_id}.", color=discord.Color.red())
+                        await after.send(embed=embed, delete_after=10)
+                        #await after.send("") 
 def setup(bot):
    bot.add_cog(RoleLock(bot))
