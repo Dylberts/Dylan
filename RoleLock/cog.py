@@ -31,6 +31,8 @@ class RoleLock(commands.Cog, name="RoleLock"):
             1233256570247188510: [1233254368963334185, 1233254790406869005, 1233255218817404938, 1233256062946246666, 1233256207112732812, 1233256301660864554, 1233256478228484116],
             # All roles ID's nested are in the order provided
 
+        }
+         
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         for locked_role_id, blocked_role_ids in self.locked_roles.items():
