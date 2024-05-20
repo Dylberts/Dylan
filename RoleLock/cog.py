@@ -37,7 +37,12 @@ class RoleLock(commands.Cog, name="RoleLock"):
                     if role.id in blocked_role_ids:
                         await after.remove_roles(role)
                         embed = discord.Embed(title="Role Blocked", description=f"This is a Test", color=discord.Color.red())
-                        await after.guild.get_channel(after.channel.id).send(embed=embed, delete_after=10)
+                        # Find the audit log entry for the role assignment
+                        async for entry in after.guild.audit_logs(action=discord.AuditLogAction.member_role_update, limit=1):
+                            if entry.target == after:
+                                channel = entry.extra.channel
+                                await channel.send(embed=embed, delete_after=10)
+                                break
                         #await after.send("") 
 def setup(bot):
    bot.add_cog(RoleLock(bot))
