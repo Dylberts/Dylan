@@ -7,26 +7,18 @@ class RoleLock(commands.Cog, name="RoleLock"):
         self.locked_role_id = 1233366060477186048  # @Age (13-17) Role ID > Replace with the ID of the role you want to lock
         self.blocked_role_ids = [1233366502451712074, 1233366641572712520, 1233366931302776843]  # @Age (18-25), @Age (26-35), @Age (36-48+) Role ID > Replace with the ID of the role you want to block 
 
-    #@commands.Cog.listener()
-    #async def on_member_update(self, before, after):
-            #for role in after.roles:
-                #if role.id in self.blocked_role_ids:
-                    #await after.remove_roles(role)
-                    ##await after.send("You cannot obtain this role while having the locked role.")
-                    #return  # Exit the function without further processing if a blocked role is found
-               ### if role.id in self.blocked_role_ids and self.locked_role_id in [role.id for role in after.roles]:
-                ###    await after.remove_roles(role)
-
-@commands.Cog.listener()
-async def on_member_update(self, before, after):
-    if self.locked_role_id in [role.id for role in after.roles]:
-        return  # Exit the function early if the user has the locked role
-
-        for role in after.roles:
-            if role.id in self.blocked_role_ids:
-                if self.locked_role_id in [role.id for role in after.roles]:
+    ##@commands.Cog.listener()
+    ##async def on_member_update(self, before, after):
+        ##for role in after.roles:
+            ##if role.id in self.blocked_role_ids and self.locked_role_id in [role.id for role in after.roles]:
+                ##await after.remove_roles(role)
+                #await after.send("You cannot obtain this role while having the locked role.")
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        locked_role = discord.utils.get(after.roles, id=self.locked_role_id)
+        if locked_role:
+            for role in after.roles:
+                if role.id in self.blocked_role_ids:
                     await after.remove_roles(role)
-                    #await after.send("You cannot obtain this role while having the locked role.")
-                    return  # Exit the function early if a blocked role is found
 def setup(bot):
-    bot.add_cog(RoleLock(bot))
+   bot.add_cog(RoleLock(bot))
