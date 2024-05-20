@@ -14,18 +14,5 @@ class RoleLock(commands.Cog, name="RoleLock"):
                 await after.remove_roles(role)
                 #await after.send("You cannot obtain this role while having the locked 
     
-    @commands.Cog.listener()
-    async def on_raw_reaction_add(self, payload):
-        channel = self.bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
-        guild = message.guild
-        member = guild.get_member(payload.user_id)
-        
-        if member:
-            if self.locked_role_id in [role.id for role in member.roles]:
-                emoji_id = str(payload.emoji.id)
-                if emoji_id in ["1233366502451712074", "1233366641572712520", "1233366931302776843", "1233369491447091251"]: # @Age (18-25), @Age (26-35), @Age (36-48+), @NSFW > Replace with your emoji IDs
-                    await message.remove_reaction(payload.emoji, member)
-
 def setup(bot):
    bot.add_cog(RoleLock(bot))
