@@ -31,13 +31,14 @@ class RoleLock(commands.Cog, name="RoleLock"):
 
         }
      
-    @commands.Cog.listener()
-    async def on_member_update(self, before, after):
-        for locked_role_id, blocked_role_ids in self.locked_roles.items():
-            if locked_role_id in [role.id for role in after.roles]:
-                for role in after.roles:
-                    if role.id in blocked_role_ids:
-                        await after.remove_roles(role)
+@commands.Cog.listener()
+async def on_member_update(self, before, after):
+    for locked_role_id, blocked_role_ids in self.locked_roles.items():
+        if locked_role_id in [role.id for role in after.roles]:
+            for role in after.roles:
+                if role.id in blocked_role_ids:
+                    await after.remove_roles(role)
+            await after.add_roles(self.bot.get_role(locked_role_id))
                   
         # New logic for Age roles
         age_locked_role_id = 1233366060477186048
