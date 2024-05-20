@@ -13,7 +13,7 @@ import discord
             ##if role.id in self.blocked_role_ids and self.locked_role_id in [role.id for role in after.roles]:
                 ##await after.remove_roles(role)
                 #await after.send("You cannot obtain this role while having the locked 
- class RoleLock(commands.Cog, name="RoleLock"):
+class RoleLock(commands.Cog, name="RoleLock"):
     def __init__(self, bot):
         self.bot = bot
         self.locked_roles = {
