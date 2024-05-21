@@ -50,13 +50,15 @@ class RoleReplace(commands.Cog, name="RoleReplace"):
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         for locked_role_id, blocked_role_ids in self.locked_roles.items():
-            if locked_role_id in [role.id for role in after.roles]:
-                locked_role = discord.utils.get(after.guild.roles, id=locked_role_id)
-                for role in after.roles:
-                    if role.id in blocked_role_ids:
-                        await after.remove_roles(locked_role)
-                        await after.add_roles(role)
-                        break  # Exit loop after repl
+            locked_role = discord.utils.get(after.guild.roles, id=locked_role_id)
+            new_roles = [role for role in after.roles if role.id != locked_role_id]
+            for role in after.roles:
+                if role.id in blocked_role_ids:
+                    if locked_role in after.roles:
+                        new_roles.remove(locked_role)
+                    new_roles.append(role)
+                    await after.edit(roles=new_roles)
+                    break  # Exit loop after role replacement
 
 def setup(bot):
     bot.add_cog(RoleLock(bot))
