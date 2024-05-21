@@ -1,5 +1,6 @@
 from redbot.core import commands
 import discord
+import logging
 
 class RoleLock(commands.Cog, name="RoleLock"):
     def __init__(self, bot):
@@ -38,22 +39,24 @@ class RoleReplace(commands.Cog, name="RoleReplace"):
         
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        before_role_ids = {role.id for role in before.roles}
-        after_role_ids = {role.id for role in after.roles}
+        logging.info("on_member_update triggered")
+        before_roles = set(before.roles)
+        after_roles = set(after.roles)
 
-        # Detect newly added roles
-        newly_added_roles = after_role_ids - before_role_ids
+        newly_added_roles = after_roles - before_roles
 
-        for new_role_id in newly_added_roles:
-            if new_role_id in self.role_replacements:
-                old_role_id = self.role_replacements[new_role_id]
+        for new_role in newly_added_roles:
+            if new_role.id in self.role_replacements:
+                logging.info(f"New role detected: {new_role.name} ({new_role.id})")
+                old_role_id = self.role_replacements[new_role.id]
                 old_role = discord.utils.get(after.guild.roles, id=old_role_id)
-                new_role = discord.utils.get(after.guild.roles, id=new_role_id)
 
-                if old_role in after.roles:
+                if old_role in after_roles:
+                    logging.info(f"Removing old role: {old_role.name} ({old_role.id})")
                     await after.remove_roles(old_role)
+                    logging.info(f"Adding new role: {new_role.name} ({new_role.id})")
                     await after.add_roles(new_role)
-
+                    
 def setup(bot):
     bot.add_cog(RoleLock(bot))
     bot.add_cog(RoleReplace(bot))
