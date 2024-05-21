@@ -46,7 +46,7 @@ class RoleReplace(commands.Cog, name="RoleReplace"):
             1233256570247188510: [1233254368963334185, 1233254790406869005, 1233255218817404938, 1233256062946246666, 1233256207112732812, 1233256301660864554, 1233256478228484116],
             # All role ID's nested are in the order listed
         }
-
+        
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         for locked_role_id, blocked_role_ids in self.locked_roles.items():
@@ -56,6 +56,7 @@ class RoleReplace(commands.Cog, name="RoleReplace"):
                     if role.id in blocked_role_ids:
                         await after.remove_roles(locked_role)
                         await after.add_roles(role)
+                        break  # Exit loop after repl
 
 def setup(bot):
     bot.add_cog(RoleLock(bot))
