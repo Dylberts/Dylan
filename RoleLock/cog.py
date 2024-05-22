@@ -1,14 +1,11 @@
 from redbot.core import commands
 import discord
 
-intents = discord.Intents.default()
-intents.members = True  # Ensure the bot can see member roles
-
 class RoleLock(commands.Cog, name="RoleLock"):
     def __init__(self, bot):
         self.bot = bot
         self.locked_roles = {
-            # @Age (13-17): [Blocked Roles: @Age (18-25), @Age (26-35), @Age (26-35), @Age (36-48+), @NSFW]
+            # @Age (13-17): [Blocked Roles: @Age (18-25), @Age (26-35), @Age (36-48+), @NSFW]
             1233366060477186048: [1233366502451712074, 1233366641572712520, 1233366931302776843],
             # All role ID's nested are in the order listed
         }
@@ -20,8 +17,9 @@ class RoleLock(commands.Cog, name="RoleLock"):
                 for role in after.roles:
                     if role.id in blocked_role_ids:
                         await after.remove_roles(role)
-                        
-class RoleReplace(commands.Cog):
+                        print(f"Removed blocked role {role.id} from {after.name}")
+
+class RoleReplace(commands.Cog, name="RoleReplace"):
     def __init__(self, bot):
         self.bot = bot
         self.role_ids = {
@@ -45,12 +43,13 @@ class RoleReplace(commands.Cog):
 
         for role_id in new_role_ids:
             if role_id in self.role_ids:
-                for old_role in before.roles:
-                    if old_role.id in self.role_ids and old_role.id != role_id:
-                        await after.remove_roles(old_role)
+                roles_to_remove = [old_role for old_role in before.roles if old_role.id in self.role_ids and old_role.id != role_id]
+                if roles_to_remove:
+                    await after.remove_roles(*roles_to_remove)
+                    for old_role in roles_to_remove:
                         print(f"Removed role {old_role.id} from {after.name}")
                 break
-                        
-def setup(bot):
+
+async def setup(bot):
     bot.add_cog(RoleLock(bot))
     bot.add_cog(RoleReplace(bot))
