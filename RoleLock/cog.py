@@ -28,8 +28,8 @@ class RoleReplace(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)  # Replace with a unique identifier
         default_guild = {
-            "role_to_watch": None,
-            "roles_to_replace": []
+            "role_to_watch": 1235573502459904042,
+            "roles_to_replace": [1235798008126246983, 1235798803425132624]
         }
         self.config.register_guild(**default_guild)
 
