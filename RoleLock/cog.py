@@ -39,28 +39,31 @@ class RoleReplace(commands.Cog, name="RoleReplace"):
     async def on_member_update(self, before, after):
         print(f"Member update detected: {before} -> {after}")
         for locked_role_id, blocked_role_ids in self.locked_roles.items():
-            # Check if the member has a locked role
-            if locked_role_id in [role.id for role in before.roles] and locked_role_id not in [role.id for role in after.roles]:
-                print(f"Locked role removed: {locked_role_id}")
-                for role in after.roles:
-                    # If the member gets a blocked role, replace the locked role
-                    if role.id in blocked_role_ids:
-                        print(f"Blocked role assigned: {role.id}")
+            # Check if the member has a locked role removed
+            before_role_ids = [role.id for role in before.roles]
+            after_role_ids = [role.id for role in after.roles]
+            if locked_role_id in before_role_ids and locked_role_id not in after_role_ids:
+                print(f"Locked role {locked_role_id} removed")
+                for role_id in blocked_role_ids:
+                    if role_id in after_role_ids:
+                        print(f"Blocked role {role_id} assigned")
                         locked_role = discord.utils.get(after.guild.roles, id=locked_role_id)
                         if locked_role:
                             await after.remove_roles(locked_role)
                             print(f"Removed locked role: {locked_role.name}")
-                        await after.add_roles(role)
-                        print(f"Assigned blocked role: {role.name}")
+                        new_role = discord.utils.get(after.guild.roles, id=role_id)
+                        await after.add_roles(new_role)
+                        print(f"Assigned blocked role: {new_role.name}")
                         break
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        guild = self.bot.get_guild(payload.guild_id)
-        member = guild.get_member(payload.user_id)
-        if member:
-            await self.check_and_update_roles(member)
-
+        if payload.guild_id:
+            guild = self.bot.get_guild(payload.guild_id)
+            member = guild.get_member(payload.user_id)
+            if member:
+                await self.check_and_update_roles(member)
+    
     async def check_and_update_roles(self, member):
         for locked_role_id, blocked_role_ids in self.locked_roles.items():
             if locked_role_id in [role.id for role in member.roles]:
