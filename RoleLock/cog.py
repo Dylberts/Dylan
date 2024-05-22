@@ -51,7 +51,7 @@ class RoleReplace(commands.Cog, name="RoleReplace"):
     async def on_member_update(self, before, after):
         for locked_role_id, blocked_role_ids in self.locked_roles.items():
             # Check if the member has a locked role
-            if locked_role_id in [role.id for role in before.roles]:
+            if locked_role_id in [role.id for role in before.roles] and locked_role_id not in [role.id for role in after.roles]:
                 for role in after.roles:
                     # If the member gets a blocked role, replace the locked role
                     if role.id in blocked_role_ids:
