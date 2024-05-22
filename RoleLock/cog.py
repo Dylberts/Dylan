@@ -23,8 +23,8 @@ class RoleReplace(commands.Cog, name="RoleReplace"):
     def __init__(self, bot):
         self.bot = bot
         self.role_ids = {
-            1235573502459904042,  # Role gold
-            1235798008126246983,  # Role silver
+            1235573502459904042:  # Role gold
+            [1235798008126246983,  # Role silver
             1235798803425132624,  # Role bronze
             1233254368963334185,  # Role 1
             1233254790406869005,  # Role 2
@@ -33,7 +33,7 @@ class RoleReplace(commands.Cog, name="RoleReplace"):
             1233256207112732812,  # Role 5
             1233256301660864554,  # Role 6
             1233256478228484116,  # Role 7
-            1233256570247188510   # Role 8
+            1233256570247188510],  # Role 8
         }
 
     @commands.Cog.listener()
