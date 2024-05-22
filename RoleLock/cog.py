@@ -37,24 +37,7 @@ class RoleReplace(commands.Cog, name="RoleReplace"):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        print(f"Member update detected: {before} -> {after}")
-        for locked_role_id, blocked_role_ids in self.locked_roles.items():
-            # Check if the member has a locked role removed
-            before_role_ids = [role.id for role in before.roles]
-            after_role_ids = [role.id for role in after.roles]
-            if locked_role_id in before_role_ids and locked_role_id not in after_role_ids:
-                print(f"Locked role {locked_role_id} removed")
-                for role_id in blocked_role_ids:
-                    if role_id in after_role_ids:
-                        print(f"Blocked role {role_id} assigned")
-                        locked_role = discord.utils.get(after.guild.roles, id=locked_role_id)
-                        if locked_role:
-                            await after.remove_roles(locked_role)
-                            print(f"Removed locked role: {locked_role.name}")
-                        new_role = discord.utils.get(after.guild.roles, id=role_id)
-                        await after.add_roles(new_role)
-                        print(f"Assigned blocked role: {new_role.name}")
-                        break
+        await self.check_and_update_roles(before, after)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
@@ -63,20 +46,25 @@ class RoleReplace(commands.Cog, name="RoleReplace"):
             member = guild.get_member(payload.user_id)
             if member:
                 await self.check_and_update_roles(member)
-    
-    async def check_and_update_roles(self, member):
+
+    async def check_and_update_roles(self, before, after=None):
+        if after is None:
+            after = before
+
+        before_roles = {role.id for role in before.roles}
+        after_roles = {role.id for role in after.roles}
+
         for locked_role_id, blocked_role_ids in self.locked_roles.items():
-            if locked_role_id in [role.id for role in member.roles]:
+            if locked_role_id in before_roles and locked_role_id not in after_roles:
                 for role_id in blocked_role_ids:
-                    role = discord.utils.get(member.guild.roles, id=role_id)
-                    if role and role in member.roles:
-                        locked_role = discord.utils.get(member.guild.roles, id=locked_role_id)
-                        if locked_role:
-                            await member.remove_roles(locked_role)
-                            print(f"Removed locked role via reaction: {locked_role.name}")
-                        await member.add_roles(role)
-                        print(f"Assigned blocked role via reaction: {role.name}")
-                        break
+                    if role_id in after_roles:
+                        locked_role = discord.utils.get(after.guild.roles, id=locked_role_id)
+                        new_role = discord.utils.get(after.guild.roles, id=role_id)
+                        if locked_role and new_role:
+                            await after.remove_roles(locked_role)
+                            await after.add_roles(new_role)
+                            print(f"Replaced {locked_role.name} with {new_role.name} for {after.display_name}")
+                            break
                         
 def setup(bot):
     bot.add_cog(RoleLock(bot))
