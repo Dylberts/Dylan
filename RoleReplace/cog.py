@@ -112,7 +112,7 @@ class RoleReplace(commands.Cog):
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         guild = after.guild
         role_sets = await self.config.guild(guild).role_sets()
-        '''Checks to see if anothet cog is loaded'''
+        '''Checks to see if another cog is loaded'''
         reaction_cog = self.bot.get_cog("roletools") # Currently using Trusty's cog: https://github.com/TrustyJAID/Trusty-cogs/tree/master
 
         if not reaction_cog:
