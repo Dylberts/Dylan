@@ -118,7 +118,8 @@ class RoleReplace(commands.Cog):
         async with self.config.guild(ctx.guild).reaction_roles() as reaction_roles:
             reaction_roles[str(role.id)] = {
                 "message_id": message_id,
-                "emoji": emoji
+                "emoji": emoji,
+                "channel_id": ctx.channel.id  # Track the channel ID as well
             }
             await ctx.send(f"Reaction role tracking added for role {role.name} with emoji {emoji} on message {message_id}.")
 
@@ -129,8 +130,10 @@ class RoleReplace(commands.Cog):
         if role_info:
             message_id = role_info["message_id"]
             emoji = role_info["emoji"]
-            
-            for channel in guild.text_channels:
+            channel_id = role_info["channel_id"]
+
+            channel = guild.get_channel(channel_id)
+            if channel:
                 try:
                     message = await channel.fetch_message(message_id)
                     reaction = discord.utils.get(message.reactions, emoji=emoji)
