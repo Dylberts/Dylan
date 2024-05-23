@@ -181,4 +181,5 @@ class RoleReplace(commands.Cog):
                         log.info(f"Removed reaction {emoji} from user {user.name} for role {role.name}")
 
 def setup(bot: Red):
-   
+    bot.add_cog(RoleReplace(bot))
+    log.info("RoleReplace cog loaded successfully.")
