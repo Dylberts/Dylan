@@ -92,29 +92,7 @@ class RoleReplace(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.Cog.listener()
-    async def on_member_update(self, before: discord.Member, after: discord.Member):
-        guild = after.guild
-        role_sets = await self.config.guild(guild).role_sets()
-
-        # Get reaction roles from RoleTools cog
-        roletools = self.bot.get_cog("RoleTools")
-        if roletools:
-            reaction_roles = await roletools.config.guild(guild).reaction_roles()
-        else:
-            reaction_roles = {}
-
-        for set_name, role_ids in role_sets.items():
-            # Check if the member gained a new role from the set
-            new_roles = [guild.get_role(role_id) for role_id in role_ids if guild.get_role(role_id) in after.roles and guild.get_role(role_id) not in before.roles]
-            if new_roles:
-                new_role = new_roles[0]  # Only consider the first new role if multiple were added
-                # Remove all other roles in the set
-                roles_to_remove = [guild.get_role(role_id) for role_id in role_ids if guild.get_role(role_id) != new_role and guild.get_role(role_id) in after.roles]
-                if roles_to_remove:
-                    await after.remove_roles(*roles_to_remove, reason="RoleReplace: Removing roles from the same set")
-                    log.info(f"Removed roles {', '.join([role.name for role in roles_to_remove])} from {after} as they gained role {new_role.name}")
-                    await self.remove_reactions(after, roles_to_remove, reaction_roles, guild)
+# Add RoleTools information here
 
     async def remove_reactions(self, member: discord.Member, roles_to_remove, reaction_roles, guild):
         for role in roles_to_remove:
