@@ -114,26 +114,26 @@ class RoleReplace(commands.Cog):
 
     @rolereplace.command()
     async def checkroletools(self, ctx):
-        """Check if RoleTools cog is loaded."""
-        cog = self.bot.get_cog("RoleTools")
+        """Check if roletools cog is loaded."""
+        cog = self.bot.get_cog("roletools")
         if cog:
-            await ctx.send("RoleTools cog is loaded.")
-            log.info("RoleTools cog is loaded.")
+            await ctx.send("roletools cog is loaded.")
+            log.info("roletools cog is loaded.")
         else:
-            await ctx.send("RoleTools cog is not loaded.")
-            log.warning("RoleTools cog is not loaded.")
+            await ctx.send("roletools cog is not loaded.")
+            log.warning("roletools cog is not loaded.")
 
     async def _remove_reactions_for_role(self, guild: discord.Guild, role: discord.Role):
         """Remove reactions for a specific role from all reaction role messages."""
         log.info(f"Attempting to remove reactions for role: {role.name} (ID: {role.id})")
-        roletools = self.bot.get_cog("RoleTools")
+        roletools = self.bot.get_cog("roletools")
         if not roletools:
-            log.warning("RoleTools cog is not loaded.")
+            log.warning("roletools cog is not loaded.")
             return
         
         try:
             reaction_roles = await roletools.config.guild(guild).reaction_roles()
-            log.info(f"Found {len(reaction_roles)} reaction roles in RoleTools config.")
+            log.info(f"Found {len(reaction_roles)} reaction roles in roletools config.")
             for message_id, reactions in reaction_roles.items():
                 for emoji, role_id in reactions.items():
                     if role_id == role.id:
@@ -142,7 +142,7 @@ class RoleReplace(commands.Cog):
                             await self._remove_role_reactions(message, emoji, role)
                             log.info(f"Removed reactions for role {role.name} (ID: {role.id}) from message {message_id}.")
         except Exception as e:
-            log.error(f"Error accessing RoleTools config: {e}")
+            log.error(f"Error accessing roletools config: {e}")
 
     async def _fetch_message(self, guild: discord.Guild, message_id: int):
         """Fetch a message by ID from the guild."""
