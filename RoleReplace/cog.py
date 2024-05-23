@@ -141,12 +141,16 @@ class RoleReplace(commands.Cog):
             reaction_roles = await roletools.config.guild(guild).reaction_roles()
             log.info(f"Found {len(reaction_roles)} reaction roles in RoleTools config.")
             for message_id, reactions in reaction_roles.items():
+                log.debug(f"Processing message ID: {message_id} with reactions: {reactions}")
                 for emoji, role_id in reactions.items():
                     if role_id == role.id:
+                        log.info(f"Role ID {role_id} matches {role.id} for emoji {emoji}")
                         message = await self._fetch_message(guild, message_id)
                         if message:
                             await self._remove_role_reactions(message, emoji, role)
                             log.info(f"Removed reactions for role {role.name} (ID: {role.id}) from message {message_id}.")
+                        else:
+                            log.warning(f"Message ID {message_id} not found.")
         except Exception as e:
             log.error(f"Error accessing RoleTools config: {e}")
 
@@ -177,5 +181,4 @@ class RoleReplace(commands.Cog):
                         log.info(f"Removed reaction {emoji} from user {user.name} for role {role.name}")
 
 def setup(bot: Red):
-    bot.add_cog(RoleReplace(bot))
-    log.info("RoleReplace cog loaded successfully.")
+   
