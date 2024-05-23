@@ -13,7 +13,7 @@ class RoleReplace(commands.Cog):
             "role_sets": {}
         }
         self.config.register_guild(**default_guild)
-
+    
     @commands.group()
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
@@ -92,6 +92,24 @@ class RoleReplace(commands.Cog):
             embed.add_field(name=f"Set: {set_name}", value=f"**Roles:** {roles_str}", inline=False)
 
         await ctx.send(embed=embed)
+    
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        # Detect if a role was added
+        added_roles = set(after.roles) - set(before.roles)
+        if added_roles:
+            for role in added_roles:
+                await self._handle_role_addition(after, role)
+    
+    async def _handle_role_addition(self, member, added_role):
+        guild = member.guild
+        role_sets = await self.config.guild(guild).role_sets()
         
+        for set_name, role_ids in role_sets.items():
+            if added_role.id in role_ids:
+                roles_to_remove = [guild.get_role(role_id) for role_id in role_ids if role_id != added_role.id and guild.get_role(role_id) in member.roles]
+                if roles_to_remove:
+                    await member.remove_roles(*roles_to_remove, reason=f"RoleReplace: Assigned {added_role.name}")
+
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
