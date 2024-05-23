@@ -21,7 +21,7 @@ class RoleReplace(commands.Cog):
     async def rolereplace(self, ctx):
         """Manage RoleReplace settings."""
         if ctx.invoked_subcommand is None:
-            await ctx.send("Use `setrole`, `addrole`, or `removerole` subcommands to configure role replacement.")
+            await ctx.send("Use `setrole`, `addroles`, or `removeroles` subcommands to configure role replacement.")
 
     @rolereplace.command()
     async def setrole(self, ctx, role: discord.Role):
@@ -30,24 +30,32 @@ class RoleReplace(commands.Cog):
         await ctx.send(f"Role to watch set to: {role.name}")
 
     @rolereplace.command()
-    async def addrole(self, ctx, role: discord.Role):
-        """Add a role to the list of roles to replace."""
-        async with self.config.guild(ctx.guild).roles_to_replace() as roles:
-            if role.id not in roles:
-                roles.append(role.id)
-                await ctx.send(f"Role {role.name} added to the replacement list.")
+    async def addroles(self, ctx, *roles: discord.Role):
+        """Add roles to the list of roles to replace."""
+        async with self.config.guild(ctx.guild).roles_to_replace() as roles_to_replace:
+            added_roles = []
+            for role in roles:
+                if role.id not in roles_to_replace:
+                    roles_to_replace.append(role.id)
+                    added_roles.append(role.name)
+            if added_roles:
+                await ctx.send(f"Roles {', '.join(added_roles)} added to the replacement list.")
             else:
-                await ctx.send(f"Role {role.name} is already in the replacement list.")
+                await ctx.send("No new roles were added to the replacement list.")
 
     @rolereplace.command()
-    async def removerole(self, ctx, role: discord.Role):
-        """Remove a role from the list of roles to replace."""
-        async with self.config.guild(ctx.guild).roles_to_replace() as roles:
-            if role.id in roles:
-                roles.remove(role.id)
-                await ctx.send(f"Role {role.name} removed from the replacement list.")
+    async def removeroles(self, ctx, *roles: discord.Role):
+        """Remove roles from the list of roles to replace."""
+        async with self.config.guild(ctx.guild).roles_to_replace() as roles_to_replace:
+            removed_roles = []
+            for role in roles:
+                if role.id in roles_to_replace:
+                    roles_to_replace.remove(role.id)
+                    removed_roles.append(role.name)
+            if removed_roles:
+                await ctx.send(f"Roles {', '.join(removed_roles)} removed from the replacement list.")
             else:
-                await ctx.send(f"Role {role.name} is not in the replacement list.")
+                await ctx.send("No roles were removed from the replacement list.")
 
     @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
