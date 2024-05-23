@@ -20,7 +20,7 @@ class RoleReplace(commands.Cog):
     async def rolereplace(self, ctx):
         """Manage RoleReplace settings."""
         if ctx.invoked_subcommand is None:
-        return
+        await
         
     @rolereplace.command()
     async def addset(self, ctx, set_name: str):
