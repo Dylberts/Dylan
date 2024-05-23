@@ -96,7 +96,7 @@ class RoleReplace(commands.Cog):
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         guild = after.guild
         role_sets = await self.config.guild(guild).role_sets()
-        
+
         # Get reaction roles from RoleTools cog
         roletools = self.bot.get_cog("RoleTools")
         if roletools:
@@ -118,7 +118,7 @@ class RoleReplace(commands.Cog):
 
     async def remove_reactions(self, member: discord.Member, roles_to_remove, reaction_roles, guild):
         for role in roles_to_remove:
-            role_data = reaction_roles.get(role.id)
+            role_data = reaction_roles.get(str(role.id))  # Ensure the role ID is accessed correctly
             if role_data:
                 channel = guild.get_channel(role_data["channel_id"])
                 if channel:
