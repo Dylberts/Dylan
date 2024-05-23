@@ -108,5 +108,46 @@ class RoleReplace(commands.Cog):
                     await after.remove_roles(*roles_to_remove, reason="RoleReplace: Removing roles from the same set")
                     log.info(f"Removed roles {', '.join([role.name for role in roles_to_remove])} from {after} as they gained role {new_role.name}")
 
+@commands.Cog.listener()
+    async def on_member_update(self, before: discord.Member, after: discord.Member):
+        guild = after.guild
+        role_sets = await self.config.guild(guild).role_sets()
+        '''Checks to see if anothet cog is loaded'''
+        reaction_cog = self.bot.get_cog("roletools") # Currently using Trusty's cog: https://github.com/TrustyJAID/Trusty-cogs/tree/master
+
+        if not reaction_cog:
+            log.error("ReactionRoles cog is not loaded.")
+            return
+
+        reaction_roles = await reaction_cog.get_reaction_roles(guild)
+
+        for set_name, role_ids in role_sets.items():
+            # Check if the member gained a new role from the set
+            new_roles = [guild.get_role(role_id) for role_id in role_ids if guild.get_role(role_id) in after.roles and guild.get_role(role_id) not in before.roles]
+            if new_roles:
+                new_role = new_roles[0]  # Only consider the first new role if multiple were added
+                # Remove all other roles in the set
+                roles_to_remove = [guild.get_role(role_id) for role_id in role_ids if guild.get_role(role_id) != new_role and guild.get_role(role_id) in after.roles]
+                if roles_to_remove:
+                    await after.remove_roles(*roles_to_remove, reason="RoleReplace: Removing roles from the same set")
+                    log.info(f"Removed roles {', '.join([role.name for role in roles_to_remove])} from {after} as they gained role {new_role.name}")
+                    await self.remove_reactions(after, roles_to_remove, reaction_roles, guild)
+
+    async def remove_reactions(self, member: discord.Member, roles_to_remove, reaction_roles, guild):
+        for role in roles_to_remove:
+            role_data = reaction_roles.get(role.id)
+            if role_data:
+                channel = guild.get_channel(role_data["channel_id"])
+                if channel:
+                    try:
+                        message = await channel.fetch_message(role_data["message_id"])
+                        emoji = role_data["emoji"]
+                        for reaction in message.reactions:
+                            if str(reaction.emoji) == emoji:
+                                await message.remove_reaction(emoji, member)
+                                log.info(f"Removed reaction {emoji} from {member} for role {role.name}")
+                    except (discord.NotFound, discord.Forbidden):
+                        log.warning(f"Could not find message or insufficient permissions to remove reaction for role {role.name}")
+
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
