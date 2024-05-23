@@ -92,7 +92,15 @@ class RoleReplace(commands.Cog):
 
         await ctx.send(embed=embed)
 
-# Add RoleTools information here
+    # Add RoleTools information here
+    async def get_reaction_roles(self, guild):
+        """Get the reaction roles from the RoleTools cog."""
+        roletools = self.bot.get_cog("RoleTools")
+        if roletools is None:
+            return None
+
+        # Get reaction roles from RoleTools config
+        return await roletools.config.guild(guild).reaction_roles()
 
     async def remove_reactions(self, member: discord.Member, roles_to_remove, reaction_roles, guild):
         for role in roles_to_remove:
