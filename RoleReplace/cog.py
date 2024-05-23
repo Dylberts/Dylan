@@ -140,9 +140,14 @@ class RoleReplace(commands.Cog):
                     if reaction:
                         async for user in reaction.users():
                             if user != self.bot.user:
+                                log.info(f"Removing reaction for user {user} from message {message_id} with emoji {emoji}")
                                 await reaction.remove(user)
+                    else:
+                        log.warning(f"No reaction found with emoji {emoji} on message {message_id}")
                 except discord.NotFound:
-                    log.warning(f"Message with ID {message_id} not found for role {role.id}")
+                    log.warning(f"Message with ID {message_id} not found in channel {channel_id}")
+            else:
+                log.warning(f"Channel with ID {channel_id} not found")
 
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
