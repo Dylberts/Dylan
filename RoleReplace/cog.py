@@ -100,7 +100,9 @@ class RoleReplace(commands.Cog):
             return None
 
         # Get reaction roles from RoleTools config
+        log.info("Fetching reaction roles from RoleTools cog")
         reaction_roles = await roletools.config.guild(guild).reaction_roles()
+        log.info(f"Reaction roles: {reaction_roles}")
         return reaction_roles
 
     async def remove_reactions(self, member: discord.Member, roles_to_remove, reaction_roles, guild: discord.Guild):
@@ -118,6 +120,10 @@ class RoleReplace(commands.Cog):
                                 log.info(f"Removed reaction {emoji} from {member} for role {role.name}")
                     except (discord.NotFound, discord.Forbidden):
                         log.warning(f"Could not find message or insufficient permissions to remove reaction for role {role.name}")
+                else:
+                    log.warning(f"Channel with ID {role_data['channel_id']} not found")
+            else:
+                log.warning(f"Role with ID {role.id} not found in reaction roles")
 
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
