@@ -21,14 +21,6 @@ class RoleReplace(commands.Cog):
         """Manage RoleReplace settings."""
         pass  # Do nothing if no subcommand is invoked
 
-    async def _remove_role_reactions(self, guild, role):
-        for channel in guild.text_channels:
-            async for message in channel.history(limit=None):
-                if message.author == self.bot.user and message.embeds:
-                    for embed in message.embeds:
-                        if role.name in embed.description:
-                            await message.clear_reaction(role.name)
-
     @rolereplace.command()
     async def addset(self, ctx, set_name: str):
         """Add a new role set."""
@@ -38,6 +30,16 @@ class RoleReplace(commands.Cog):
             else:
                 role_sets[set_name] = []
                 await ctx.send(f"Role set '{set_name}' has been created.")
+
+    @rolereplace.command()
+    async def removeset(self, ctx, set_name: str):
+        """Remove an existing role set."""
+        async with self.config.guild(ctx.guild).role_sets() as role_sets:
+            if set_name in role_sets:
+                del role_sets[set_name]
+                await ctx.send(f"Role set '{set_name}' has been removed.")
+            else:
+                await ctx.send(f"No role set with the name '{set_name}' exists.")
 
     @rolereplace.command()
     async def addroles(self, ctx, set_name: str, *roles: discord.Role):
@@ -55,16 +57,6 @@ class RoleReplace(commands.Cog):
                 await ctx.send(f"Roles {', '.join(added_roles)} added to set '{set_name}'.")
             else:
                 await ctx.send("No new roles were added to the set.")
-
-    @rolereplace.command()
-    async def removeset(self, ctx, set_name: str):
-        """Remove an existing role set."""
-        async with self.config.guild(ctx.guild).role_sets() as role_sets:
-            if set_name in role_sets:
-                del role_sets[set_name]
-                await ctx.send(f"Role set '{set_name}' has been removed.")
-            else:
-                await ctx.send(f"No role set with the name '{set_name}' exists.")
 
     @rolereplace.command()
     async def removeroles(self, ctx, set_name: str, *roles: discord.Role):
@@ -100,6 +92,6 @@ class RoleReplace(commands.Cog):
             embed.add_field(name=f"Set: {set_name}", value=f"**Roles:** {roles_str}", inline=False)
 
         await ctx.send(embed=embed)
-
+        
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
