@@ -95,20 +95,21 @@ class RoleReplace(commands.Cog):
 
     async def _remove_reactions_for_role(self, guild: discord.Guild, role: discord.Role):
         """Remove reactions for a specific role from all reaction role messages."""
-        # Get the roletools cog
         roletools = self.bot.get_cog("RoleTools")
         if not roletools:
             log.warning("RoleTools cog is not loaded.")
             return
         
-        # Access roletools config
-        reaction_roles = await roletools.config.guild(guild).reaction_roles()
-        for message_id, reactions in reaction_roles.items():
-            for emoji, role_id in reactions.items():
-                if role_id == role.id:
-                    message = await self._fetch_message(guild, message_id)
-                    if message:
-                        await self._remove_role_reactions(message, emoji, role)
+        try:
+            reaction_roles = await roletools.config.guild(guild).reaction_roles()
+            for message_id, reactions in reaction_roles.items():
+                for emoji, role_id in reactions.items():
+                    if role_id == role.id:
+                        message = await self._fetch_message(guild, message_id)
+                        if message:
+                            await self._remove_role_reactions(message, emoji, role)
+        except Exception as e:
+            log.error(f"Error accessing RoleTools config: {e}")
 
     async def _fetch_message(self, guild: discord.Guild, message_id: int):
         """Fetch a message by ID from the guild."""
@@ -132,3 +133,4 @@ class RoleReplace(commands.Cog):
 
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
+    log.info("RoleReplace cog loaded successfully.")
