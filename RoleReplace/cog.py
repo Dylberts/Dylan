@@ -84,7 +84,7 @@ class RoleReplace(commands.Cog):
             await ctx.send("There are no role sets configured.")
             return
 
-        embed = discord.Embed(title="Role Sets", color=discord.Color.blue())
+        embed = discord.Embed(title="Role Sets", color=discord.Color.6EDFBA())
         for set_name, role_ids in role_sets.items():
             roles = [ctx.guild.get_role(role_id) for role_id in role_ids if ctx.guild.get_role(role_id)]
             roles_str = ", ".join([role.name for role in roles]) if roles else "None"
@@ -113,10 +113,10 @@ class RoleReplace(commands.Cog):
         guild = after.guild
         role_sets = await self.config.guild(guild).role_sets()
         '''Checks to see if another cog is loaded'''
-        reaction_cog = self.bot.get_cog("roletools") # Currently using Trusty's cog: https://github.com/TrustyJAID/Trusty-cogs/tree/master
+        reaction_cog = self.bot.get_cog("RoleTools") # Currently using Trusty's cog: https://github.com/TrustyJAID/Trusty-cogs/tree/master
 
         if not reaction_cog:
-            log.error("ReactionRoles cog is not loaded.")
+            log.error("RoleTools cog is not loaded.")
             return
 
         reaction_roles = await reaction_cog.get_reaction_roles(guild)
