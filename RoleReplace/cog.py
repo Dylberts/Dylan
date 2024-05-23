@@ -84,7 +84,7 @@ class RoleReplace(commands.Cog):
             await ctx.send("There are no role sets configured.")
             return
 
-        embed = discord.Embed(title="Role Sets", color=discord.Color.6EDFBA())
+        embed = discord.Embed(title="Role Sets", color=discord.Color.(0x6EDFBA))
         for set_name, role_ids in role_sets.items():
             roles = [ctx.guild.get_role(role_id) for role_id in role_ids if ctx.guild.get_role(role_id)]
             roles_str = ", ".join([role.name for role in roles]) if roles else "None"
