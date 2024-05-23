@@ -71,7 +71,7 @@ class RoleReplace(commands.Cog):
                 if role.id in role_sets[set_name]:
                     role_sets[set_name].remove(role.id)
                     removed_roles.append(role.name)
-                    await self._remove_role_reactions(ctx.guild, role)
+                    await self._remove_role_reactions_from_member(ctx.guild, role)
             if removed_roles:
                 await ctx.send(f"Roles {', '.join(removed_roles)} removed from set '{set_name}'.")
             else:
