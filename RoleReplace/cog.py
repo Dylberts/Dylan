@@ -8,10 +8,10 @@ log = logging.getLogger("red.RoleReplace")
 class RoleReplace(commands.Cog):
     def __init__(self, bot: Red):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=1234567890)
+        self.config = Config.get_conf(self, identifier=1234567890)  # Replace with a unique identifier
         default_guild = {
             "role_sets": {},
-            "reaction_roles": {}  # New config entry for tracking reaction roles
+            "role_reactions": {}  # Track messages and their role reactions
         }
         self.config.register_guild(**default_guild)
     
@@ -93,6 +93,25 @@ class RoleReplace(commands.Cog):
             embed.add_field(name=f"Set: {set_name}", value=f"**Roles:** {roles_str}", inline=False)
 
         await ctx.send(embed=embed)
+
+    @rolereplace.command()
+    async def addreaction(self, ctx, message_id: int, emoji: str, role: discord.Role):
+        """Associate a role with an emoji reaction on a specific message."""
+        async with self.config.guild(ctx.guild).role_reactions() as role_reactions:
+            if message_id not in role_reactions:
+                role_reactions[message_id] = {}
+            role_reactions[message_id][emoji] = role.id
+            await ctx.send(f"Reaction {emoji} on message ID {message_id} now grants the role {role.name}.")
+
+    @rolereplace.command()
+    async def removereaction(self, ctx, message_id: int, emoji: str):
+        """Remove the association of a role with an emoji reaction on a specific message."""
+        async with self.config.guild(ctx.guild).role_reactions() as role_reactions:
+            if message_id in role_reactions and emoji in role_reactions[message_id]:
+                del role_reactions[message_id][emoji]
+                await ctx.send(f"Reaction {emoji} on message ID {message_id} no longer grants any role.")
+            else:
+                await ctx.send("No such reaction-role association exists.")
     
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
@@ -112,48 +131,21 @@ class RoleReplace(commands.Cog):
                 if roles_to_remove:
                     await member.remove_roles(*roles_to_remove, reason=f"RoleReplace: Assigned {added_role.name}")
 
-    @rolereplace.command()
-    async def addreactionrole(self, ctx, message_id: int, emoji: str, role: discord.Role):
-        """Add a reaction role to the tracking list."""
-        async with self.config.guild(ctx.guild).reaction_roles() as reaction_roles:
-            reaction_roles[str(role.id)] = {
-                "message_id": message_id,
-                "emoji": emoji,
-                "channel_id": ctx.channel.id  # Track the channel ID as well
-            }
-            await ctx.send(f"Reaction role tracking added for role {role.name} with emoji {emoji} on message {message_id}.")
-
     async def _remove_role_reactions(self, guild, role):
-        log.info(f"Entering _remove_role_reactions for role {role.name} ({role.id}) in guild {guild.name} ({guild.id})")
-        reaction_roles = await self.config.guild(guild).reaction_roles()
-        role_info = reaction_roles.get(str(role.id))
-        
-        if role_info:
-            message_id = role_info["message_id"]
-            emoji = role_info["emoji"]
-            channel_id = role_info["channel_id"]
+        """Remove reactions corresponding to the role being removed."""
+        role_reactions = await self.config.guild(guild).role_reactions()
 
-            log.info(f"Found reaction role info for role {role.name}: message_id={message_id}, emoji={emoji}, channel_id={channel_id}")
-
-            channel = guild.get_channel(channel_id)
-            if channel:
-                try:
-                    message = await channel.fetch_message(message_id)
-                    reaction = discord.utils.get(message.reactions, emoji=emoji)
-                    if reaction:
-                        async for user in reaction.users():
-                            if user != self.bot.user:
-                                log.info(f"Removing reaction for user {user} from message {message_id} with emoji {emoji}")
-                                await reaction.remove(user)
-                    else:
-                        log.warning(f"No reaction found with emoji {emoji} on message {message_id}")
-                except discord.NotFound:
-                    log.warning(f"Message with ID {message_id} not found in channel {channel_id}")
-            else:
-                log.warning(f"Channel with ID {channel_id} not found")
-        else:
-            log.warning(f"No reaction role info found for role {role.name} ({role.id})")
-        log.info(f"Exiting _remove_role_reactions for role {role.name} ({role.id}) in guild {guild.name} ({guild.id})")
+        for message_id, reactions in role_reactions.items():
+            for emoji, role_id in reactions.items():
+                if role_id == role.id:
+                    try:
+                        channel = guild.get_channel(message_id // 100000000000000000)  # Assuming the channel_id is in the higher bits of the message_id
+                        message = await channel.fetch_message(message_id)
+                        for member in message.reactions:
+                            if role in member.roles:
+                                await message.remove_reaction(emoji, member)
+                    except (discord.NotFound, discord.Forbidden) as e:
+                        log.error(f"Failed to remove reaction {emoji} from message {message_id}: {e}")
 
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
