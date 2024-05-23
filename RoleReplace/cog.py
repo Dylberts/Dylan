@@ -96,8 +96,8 @@ class RoleReplace(commands.Cog):
     async def _remove_role_reactions(self, guild: discord.Guild, role: discord.Role):
         """Remove reactions associated with a role from all reaction role messages."""
         roletools = self.bot.get_cog("RoleTools")
-            if not roletools:
-                log.warning("RoleTools cog is not loaded.")
+        if not roletools:
+            log.warning("RoleTools cog is not loaded.")
         return
 
     try:
