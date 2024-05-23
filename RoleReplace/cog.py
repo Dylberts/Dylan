@@ -1,6 +1,7 @@
-import discord
-from redbot.core import commands, Config
+from redbot.core import Config
 from redbot.core.bot import Red
+import discord
+from discord.ext import commands
 import logging
 
 log = logging.getLogger("red.RoleReplace")
@@ -8,9 +9,10 @@ log = logging.getLogger("red.RoleReplace")
 class RoleReplace(commands.Cog):
     def __init__(self, bot: Red):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=1234567890)  # Replace with a unique identifier
+        self.config = Config.get_conf(self, identifier=1234567890)
         default_guild = {
-            "role_sets": {}
+            "role_sets": {},
+            "reaction_roles": {}  # New config entry for tracking reaction roles
         }
         self.config.register_guild(**default_guild)
     
@@ -110,6 +112,35 @@ class RoleReplace(commands.Cog):
                 roles_to_remove = [guild.get_role(role_id) for role_id in role_ids if role_id != added_role.id and guild.get_role(role_id) in member.roles]
                 if roles_to_remove:
                     await member.remove_roles(*roles_to_remove, reason=f"RoleReplace: Assigned {added_role.name}")
+
+    @rolereplace.command()
+    async def addreactionrole(self, ctx, message_id: int, emoji: str, role: discord.Role):
+        """Add a reaction role to the tracking list."""
+        async with self.config.guild(ctx.guild).reaction_roles() as reaction_roles:
+            reaction_roles[str(role.id)] = {
+                "message_id": message_id,
+                "emoji": emoji
+            }
+            await ctx.send(f"Reaction role tracking added for role {role.name} with emoji {emoji} on message {message_id}.")
+
+    async def _remove_role_reactions(self, guild, role):
+        reaction_roles = await self.config.guild(guild).reaction_roles()
+        role_info = reaction_roles.get(str(role.id))
+        
+        if role_info:
+            message_id = role_info["message_id"]
+            emoji = role_info["emoji"]
+            
+            channel = guild.get_channel(role_info["channel_id"])  # This assumes you have channel_id stored as well.
+            if channel:
+                try:
+                    message = await channel.fetch_message(message_id)
+                    for member in message.reactions:
+                        async for user in member.users():
+                            if user.id == role.id:
+                                await member.remove(user)
+                except discord.NotFound:
+                    log.warning(f"Message with ID {message_id} not found for role {role.id}")
 
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
