@@ -112,6 +112,17 @@ class RoleReplace(commands.Cog):
         await ctx.send(embed=embed)
         log.info("Role sets listed.")
 
+    @rolereplace.command()
+    async def checkroletools(self, ctx):
+        """Check if RoleTools cog is loaded."""
+        cog = self.bot.get_cog("RoleTools")
+        if cog:
+            await ctx.send("RoleTools cog is loaded.")
+            log.info("RoleTools cog is loaded.")
+        else:
+            await ctx.send("RoleTools cog is not loaded.")
+            log.warning("RoleTools cog is not loaded.")
+
     async def _remove_reactions_for_role(self, guild: discord.Guild, role: discord.Role):
         """Remove reactions for a specific role from all reaction role messages."""
         log.info(f"Attempting to remove reactions for role: {role.name} (ID: {role.id})")
