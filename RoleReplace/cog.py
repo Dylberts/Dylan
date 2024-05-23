@@ -8,7 +8,7 @@ log = logging.getLogger("red.RoleReplace")
 class RoleReplace(commands.Cog):
     def __init__(self, bot: Red):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=1234567890)  # Replace with a unique identifier
+        self.config = Config.get_conf(self, identifier=1234567890)
         default_guild = {
             "role_sets": {},
             "role_reactions": {}  # Track messages and their role reactions
@@ -20,7 +20,7 @@ class RoleReplace(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def rolereplace(self, ctx):
         """Manage RoleReplace settings."""
-        pass  # Do nothing if no subcommand is invoked
+        pass
 
     @rolereplace.command()
     async def addset(self, ctx, set_name: str):
@@ -154,5 +154,5 @@ class RoleReplace(commands.Cog):
                     except (discord.NotFound, discord.Forbidden) as e:
                         log.error(f"Failed to remove reaction {emoji} from message {message_id}: {e}")
 
-def setup(bot: Red):
-    bot.add_cog(RoleReplace(bot))
+async def setup(bot: Red):
+    await bot.add_cog(RoleReplace(bot))
