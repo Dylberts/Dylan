@@ -120,6 +120,11 @@ class RoleReplace(commands.Cog):
         if added_roles:
             for role in added_roles:
                 await self._handle_role_addition(after, role)
+        # Detect if a role was removed
+        removed_roles = set(before.roles) - set(after.roles)
+        if removed_roles:
+            for role in removed_roles:
+                await self._handle_role_removal(after, role)
     
     async def _handle_role_addition(self, member, added_role):
         guild = member.guild
@@ -131,19 +136,21 @@ class RoleReplace(commands.Cog):
                 if roles_to_remove:
                     await member.remove_roles(*roles_to_remove, reason=f"RoleReplace: Assigned {added_role.name}")
 
-    async def _remove_role_reactions(self, guild, role):
+    async def _handle_role_removal(self, member, removed_role):
+        await self._remove_role_reactions_from_member(member, removed_role)
+    
+    async def _remove_role_reactions_from_member(self, member, role):
         """Remove reactions corresponding to the role being removed."""
+        guild = member.guild
         role_reactions = await self.config.guild(guild).role_reactions()
 
         for message_id, reactions in role_reactions.items():
             for emoji, role_id in reactions.items():
                 if role_id == role.id:
                     try:
-                        channel = guild.get_channel(message_id // 100000000000000000)  # Assuming the channel_id is in the higher bits of the message_id
+                        channel = await self.bot.fetch_channel(message_id >> 22)  # Extract channel ID from message ID
                         message = await channel.fetch_message(message_id)
-                        for member in message.reactions:
-                            if role in member.roles:
-                                await message.remove_reaction(emoji, member)
+                        await message.remove_reaction(emoji, member)
                     except (discord.NotFound, discord.Forbidden) as e:
                         log.error(f"Failed to remove reaction {emoji} from message {message_id}: {e}")
 
