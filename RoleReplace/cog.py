@@ -21,6 +21,14 @@ class RoleReplace(commands.Cog):
         """Manage RoleReplace settings."""
         pass  # Do nothing if no subcommand is invoked
 
+    async def _remove_role_reactions(self, guild, role):
+        for channel in guild.text_channels:
+            async for message in channel.history(limit=None):
+                if message.author == self.bot.user and message.embeds:
+                    for embed in message.embeds:
+                        if role.name in embed.description:
+                            await message.clear_reaction(role.name)
+
     @rolereplace.command()
     async def addset(self, ctx, set_name: str):
         """Add a new role set."""
@@ -30,16 +38,6 @@ class RoleReplace(commands.Cog):
             else:
                 role_sets[set_name] = []
                 await ctx.send(f"Role set '{set_name}' has been created.")
-
-    @rolereplace.command()
-    async def removeset(self, ctx, set_name: str):
-        """Remove an existing role set."""
-        async with self.config.guild(ctx.guild).role_sets() as role_sets:
-            if set_name in role_sets:
-                del role_sets[set_name]
-                await ctx.send(f"Role set '{set_name}' has been removed.")
-            else:
-                await ctx.send(f"No role set with the name '{set_name}' exists.")
 
     @rolereplace.command()
     async def addroles(self, ctx, set_name: str, *roles: discord.Role):
@@ -57,6 +55,16 @@ class RoleReplace(commands.Cog):
                 await ctx.send(f"Roles {', '.join(added_roles)} added to set '{set_name}'.")
             else:
                 await ctx.send("No new roles were added to the set.")
+
+    @rolereplace.command()
+    async def removeset(self, ctx, set_name: str):
+        """Remove an existing role set."""
+        async with self.config.guild(ctx.guild).role_sets() as role_sets:
+            if set_name in role_sets:
+                del role_sets[set_name]
+                await ctx.send(f"Role set '{set_name}' has been removed.")
+            else:
+                await ctx.send(f"No role set with the name '{set_name}' exists.")
 
     @rolereplace.command()
     async def removeroles(self, ctx, set_name: str, *roles: discord.Role):
@@ -92,48 +100,6 @@ class RoleReplace(commands.Cog):
             embed.add_field(name=f"Set: {set_name}", value=f"**Roles:** {roles_str}", inline=False)
 
         await ctx.send(embed=embed)
-
-    async def _remove_role_reactions(self, guild: discord.Guild, role: discord.Role):
-        """Remove reactions associated with a role from all reaction role messages."""
-        roletools = self.bot.get_cog("RoleTools")
-        if not roletools:
-            log.warning("RoleTools cog is not loaded.")
-            return
-
-        try:
-            async with roletools.config.guild(guild).reaction_roles() as reaction_roles:
-                if isinstance(reaction_roles, dict):
-                    for message_id, reactions in reaction_roles.items():
-                        if isinstance(reactions, dict):
-                            for emoji, role_id in reactions.items():
-                                if role_id == role.id:
-                                    message = await self._fetch_message(guild, message_id)
-                                    if message:
-                                        await self._remove_role_reaction(message, emoji, role)
-                else:
-                    log.warning("Invalid reaction roles data structure.")
-        except Exception as e:
-            log.error(f"Error accessing RoleTools config: {e}")
-
-    async def _fetch_message(self, guild: discord.Guild, message_id: int):
-        """Fetch a message by ID from the guild."""
-        for channel in guild.text_channels:
-            try:
-                message = await channel.fetch_message(message_id)
-                if message:
-                    return message
-            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
-                continue
-        return None
-
-    async def _remove_role_reaction(self, message: discord.Message, emoji: str, role: discord.Role):
-        """Remove a user's reaction associated with a role from a message."""
-        for reaction in message.reactions:
-            if str(reaction.emoji) == emoji:
-                async for user in reaction.users():
-                    member = message.guild.get_member(user.id)
-                    if member and role in member.roles:
-                        await message.remove_reaction(emoji, user)
 
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
