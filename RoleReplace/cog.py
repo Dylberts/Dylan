@@ -108,7 +108,7 @@ class RoleReplace(commands.Cog):
                     await after.remove_roles(*roles_to_remove, reason="RoleReplace: Removing roles from the same set")
                     log.info(f"Removed roles {', '.join([role.name for role in roles_to_remove])} from {after} as they gained role {new_role.name}")
 
-@commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         guild = after.guild
         role_sets = await self.config.guild(guild).role_sets()
