@@ -124,6 +124,7 @@ class RoleReplace(commands.Cog):
             await ctx.send(f"Reaction role tracking added for role {role.name} with emoji {emoji} on message {message_id}.")
 
     async def _remove_role_reactions(self, guild, role):
+        log.info(f"Entering _remove_role_reactions for role {role.name} ({role.id}) in guild {guild.name} ({guild.id})")
         reaction_roles = await self.config.guild(guild).reaction_roles()
         role_info = reaction_roles.get(str(role.id))
         
@@ -131,6 +132,8 @@ class RoleReplace(commands.Cog):
             message_id = role_info["message_id"]
             emoji = role_info["emoji"]
             channel_id = role_info["channel_id"]
+
+            log.info(f"Found reaction role info for role {role.name}: message_id={message_id}, emoji={emoji}, channel_id={channel_id}")
 
             channel = guild.get_channel(channel_id)
             if channel:
@@ -148,6 +151,9 @@ class RoleReplace(commands.Cog):
                     log.warning(f"Message with ID {message_id} not found in channel {channel_id}")
             else:
                 log.warning(f"Channel with ID {channel_id} not found")
+        else:
+            log.warning(f"No reaction role info found for role {role.name} ({role.id})")
+        log.info(f"Exiting _remove_role_reactions for role {role.name} ({role.id}) in guild {guild.name} ({guild.id})")
 
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
