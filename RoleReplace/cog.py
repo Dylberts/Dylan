@@ -1,7 +1,6 @@
-from redbot.core import Config
-from redbot.core.bot import Red
 import discord
-from discord.ext import commands
+from redbot.core import commands, Config
+from redbot.core.bot import Red
 import logging
 
 log = logging.getLogger("red.RoleReplace")
@@ -131,14 +130,14 @@ class RoleReplace(commands.Cog):
             message_id = role_info["message_id"]
             emoji = role_info["emoji"]
             
-            channel = guild.get_channel(role_info["channel_id"])  # This assumes you have channel_id stored as well.
-            if channel:
+            for channel in guild.text_channels:
                 try:
                     message = await channel.fetch_message(message_id)
-                    for member in message.reactions:
-                        async for user in member.users():
-                            if user.id == role.id:
-                                await member.remove(user)
+                    reaction = discord.utils.get(message.reactions, emoji=emoji)
+                    if reaction:
+                        async for user in reaction.users():
+                            if user != self.bot.user:
+                                await reaction.remove(user)
                 except discord.NotFound:
                     log.warning(f"Message with ID {message_id} not found for role {role.id}")
 
