@@ -98,22 +98,22 @@ class RoleReplace(commands.Cog):
         roletools = self.bot.get_cog("RoleTools")
         if not roletools:
             log.warning("RoleTools cog is not loaded.")
-        return
+            return
 
-    try:
-        reaction_roles = await roletools.config.guild(guild).reaction_roles()
-        if isinstance(reaction_roles, dict):
-            for message_id, reactions in reaction_roles.items():
-                if isinstance(reactions, dict):
-                    for emoji, role_id in reactions.items():
-                        if role_id == role.id:
-                            message = await self._fetch_message(guild, message_id)
-                            if message:
-                                await self._remove_role_reaction(message, emoji, role)
-        else:
-            log.warning("Invalid reaction roles data structure.")
-    except Exception as e:
-        log.error(f"Error accessing RoleTools config: {e}")
+        try:
+            async with roletools.config.guild(guild).reaction_roles() as reaction_roles:
+                if isinstance(reaction_roles, dict):
+                    for message_id, reactions in reaction_roles.items():
+                        if isinstance(reactions, dict):
+                            for emoji, role_id in reactions.items():
+                                if role_id == role.id:
+                                    message = await self._fetch_message(guild, message_id)
+                                    if message:
+                                        await self._remove_role_reaction(message, emoji, role)
+                else:
+                    log.warning("Invalid reaction roles data structure.")
+        except Exception as e:
+            log.error(f"Error accessing RoleTools config: {e}")
 
     async def _fetch_message(self, guild: discord.Guild, message_id: int):
         """Fetch a message by ID from the guild."""
