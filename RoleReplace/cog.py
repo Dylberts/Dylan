@@ -146,13 +146,4 @@ class RoleReplace(commands.Cog):
 
         for message_id, reactions in role_reactions.items():
             for emoji, role_id in reactions.items():
-                if role_id == role.id:
-                    try:
-                        channel = await self.bot.fetch_channel(message_id >> 22)  # Extract channel ID from message ID
-                        message = await channel.fetch_message(message_id)
-                        await message.remove_reaction(emoji, member)
-                    except (discord.NotFound, discord.Forbidden) as e:
-                        log.error(f"Failed to remove reaction {emoji} from message {message_id}: {e}")
-
-def setup(bot: Red):
-    bot.add_cog(RoleReplace(bot))
+                if role_id == role
