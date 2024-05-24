@@ -185,7 +185,7 @@ class RoleReplace(commands.Cog):
             
             for reaction in message.reactions:
                 if str(reaction.emoji) == emoji_to_check:
-                    users = await asyncio.gather(*reaction.users())
+                    users = await asyncio.gather(reaction.users())
                     if member in users:
                         await message.remove_reaction(reaction.emoji, member)
                         break
