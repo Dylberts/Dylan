@@ -114,9 +114,6 @@ class RoleReplace(commands.Cog):
                     else:
                         message_ids_str = str(message_ids)
                         embed.add_field(name=f"Channel: {channel.name}", value=f"**Messages:** {message_ids_str}", inline=False)
-                    else:
-                        message_ids_str = str(message_ids)
-                        embed.add_field(name=f"Channel ID: {channel_id}", value=f"**Messages:** {message_ids_str}", inline=False)
 
             await ctx.send(embed=embed)
 
