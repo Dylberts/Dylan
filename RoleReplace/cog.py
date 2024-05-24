@@ -153,7 +153,7 @@ class RoleReplace(commands.Cog):
                 await ctx.send(f"Message IDs {', '.join(map(str, message_ids))} in channel {channel.mention} removed from the reaction removal list.")
             else:
                 await ctx.send(f"No messages found in channel {channel.mention}.")
-
+            
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         # Detect if a role was added or removed
