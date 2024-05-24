@@ -9,9 +9,8 @@ class RoleReplace(commands.Cog):
         default_guild = {
             "role_sets": {},
             "reaction_settings": {
-                "roles": [],
-                "emojis": [],
-                "messages": {}
+                "role_emoji_mapping": {},  # Maps role IDs to emoji strings
+                "messages": {}  # Maps channel IDs to message IDs
             }
         }
         self.config.register_guild(**default_guild)
@@ -79,50 +78,49 @@ class RoleReplace(commands.Cog):
 
     @rolereplace.command()
     async def list(self, ctx):
-        """List all role sets with their roles."""
+        """List all role sets with their roles and emoji-role mappings."""
         role_sets = await self.config.guild(ctx.guild).role_sets()
+        reaction_settings = await self.config.guild(ctx.guild).reaction_settings()
+        role_emoji_mapping = reaction_settings["role_emoji_mapping"]
 
-        if not role_sets:
-            await ctx.send("There are no role sets configured.")
+        if not role_sets and not role_emoji_mapping:
+            await ctx.send("There are no role sets or emoji-role mappings configured.")
             return
 
-        embed = discord.Embed(title="Role Sets", color=0x6EDFBA)
-        for set_name, role_ids in role_sets.items():
-            roles = [ctx.guild.get_role(role_id) for role_id in role_ids if ctx.guild.get_role(role_id)]
-            roles_str = ", ".join([role.name for role in roles]) if roles else "None"
-            embed.add_field(name=f"Set: {set_name}", value=f"**Roles:** {roles_str}", inline=False)
+        embed = discord.Embed(title="Role Replace Settings", color=0x6EDFBA)
+        
+        if role_sets:
+            for set_name, role_ids in role_sets.items():
+                roles = [ctx.guild.get_role(role_id) for role_id in role_ids if ctx.guild.get_role(role_id)]
+                roles_str = ", ".join([role.name for role in roles]) if roles else "None"
+                embed.add_field(name=f"Set: {set_name}", value=f"**Roles:** {roles_str}", inline=False)
+
+        if role_emoji_mapping:
+            for role_id, emoji in role_emoji_mapping.items():
+                role = ctx.guild.get_role(int(role_id))
+                if role:
+                    embed.add_field(name=f"Role: {role.name}", value=f"**Emoji:** {emoji}", inline=False)
+                else:
+                    embed.add_field(name=f"Role ID: {role_id}", value=f"**Emoji:** {emoji}", inline=False)
 
         await ctx.send(embed=embed)
-    
-    @rolereplace.command()
-    async def addreactions(self, ctx, *roles: discord.Role):
-        """Add roles to the reaction removal list."""
-        async with self.config.guild(ctx.guild).reaction_settings() as settings:
-            role_ids = [role.id for role in roles]
-            settings["roles"] = list(set(settings["roles"] + role_ids))
-            await ctx.send(f"Roles {', '.join([role.name for role in roles])} added to the reaction removal list.")
 
     @rolereplace.command()
-    async def removereactions(self, ctx, *roles: discord.Role):
-        """Remove roles from the reaction removal list."""
+    async def assignemoji(self, ctx, role: discord.Role, emoji: str):
+        """Assign an emoji to a role for reaction removal."""
         async with self.config.guild(ctx.guild).reaction_settings() as settings:
-            role_ids = [role.id for role in roles]
-            settings["roles"] = [role_id for role_id in settings["roles"] if role_id not in role_ids]
-            await ctx.send(f"Roles {', '.join([role.name for role in roles])} removed from the reaction removal list.")
+            settings["role_emoji_mapping"][str(role.id)] = emoji
+            await ctx.send(f"Emoji {emoji} assigned to role {role.name} for reaction removal.")
 
     @rolereplace.command()
-    async def addemojis(self, ctx, *emojis: str):
-        """Add emojis to the reaction removal list."""
+    async def removeemoji(self, ctx, role: discord.Role):
+        """Remove an assigned emoji from a role."""
         async with self.config.guild(ctx.guild).reaction_settings() as settings:
-            settings["emojis"] = list(set(settings["emojis"] + list(emojis)))
-            await ctx.send(f"Emojis {', '.join(emojis)} added to the reaction removal list.")
-
-    @rolereplace.command()
-    async def removeemojis(self, ctx, *emojis: str):
-        """Remove emojis from the reaction removal list."""
-        async with self.config.guild(ctx.guild).reaction_settings() as settings:
-            settings["emojis"] = [emoji for emoji in settings["emojis"] if emoji not in emojis]
-            await ctx.send(f"Emojis {', '.join(emojis)} removed from the reaction removal list.")
+            if str(role.id) in settings["role_emoji_mapping"]:
+                del settings["role_emoji_mapping"][str(role.id)]
+                await ctx.send(f"Emoji assignment removed from role {role.name}.")
+            else:
+                await ctx.send(f"No emoji assignment found for role {role.name}.")
 
     @rolereplace.command()
     async def addmessage(self, ctx, channel: discord.TextChannel, message_id: int):
@@ -143,7 +141,7 @@ class RoleReplace(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        # Detect if a role was added
+        # Detect if a role was added or removed
         added_roles = set(after.roles) - set(before.roles)
         removed_roles = set(before.roles) - set(after.roles)
 
@@ -169,9 +167,11 @@ class RoleReplace(commands.Cog):
         guild = member.guild
         settings = await self.config.guild(guild).reaction_settings()
         
-        if removed_role.id not in settings["roles"]:
+        role_emoji_mapping = settings["role_emoji_mapping"]
+        if str(removed_role.id) not in role_emoji_mapping:
             return
 
+        emoji_to_check = role_emoji_mapping[str(removed_role.id)]
         for channel_id_str, message_id in settings["messages"].items():
             channel = guild.get_channel(int(channel_id_str))
             if not channel:
@@ -183,7 +183,7 @@ class RoleReplace(commands.Cog):
                 continue
             
             for reaction in message.reactions:
-                if str(reaction.emoji) in settings["emojis"]:
+                if str(reaction.emoji) == emoji_to_check:
                     users = await reaction.users().flatten()
                     if member in users:
                         await message.remove_reaction(reaction.emoji, member)
