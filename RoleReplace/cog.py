@@ -142,7 +142,7 @@ class RoleReplace(commands.Cog):
             settings["messages"][str(channel.id)].extend(message_ids)
             await ctx.send(f"Message IDs {', '.join(map(str, message_ids))} in channel {channel.mention} added to the reaction removal list.")
 
-        async def removemessage(self, ctx, channel: discord.TextChannel, *message_ids: int):
+    async def removemessage(self, ctx, channel: discord.TextChannel, *message_ids: int):
         """Remove messages from the reaction removal list."""
         async with self.config.guild(ctx.guild).reaction_settings() as settings:
             if str(channel.id) in settings["messages"]:
