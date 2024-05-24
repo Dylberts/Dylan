@@ -109,7 +109,7 @@ class RoleReplace(commands.Cog):
             for channel_id, message_ids in messages.items():
                 channel = ctx.guild.get_channel(int(channel_id))
                 if channel:
-                    message_ids_str = ", ".join([str(mid) for mid in message_ids])
+                    message_ids_str = ", ".join(map(str, message_ids))  # Convert each message ID to string
                     embed.add_field(name=f"Channel: {channel.name}", value=f"**Messages:** {message_ids_str}", inline=False)
                 else:
                     embed.add_field(name=f"Channel ID: {channel_id}", value=f"**Messages:** {message_ids_str}", inline=False)
@@ -142,8 +142,7 @@ class RoleReplace(commands.Cog):
             settings["messages"][str(channel.id)].extend(message_ids)
             await ctx.send(f"Message IDs {', '.join(map(str, message_ids))} in channel {channel.mention} added to the reaction removal list.")
 
-    @rolereplace.command()
-    async def removemessage(self, ctx, channel: discord.TextChannel, *message_ids: int):
+        async def removemessage(self, ctx, channel: discord.TextChannel, *message_ids: int):
         """Remove messages from the reaction removal list."""
         async with self.config.guild(ctx.guild).reaction_settings() as settings:
             if str(channel.id) in settings["messages"]:
@@ -153,7 +152,7 @@ class RoleReplace(commands.Cog):
                 await ctx.send(f"Message IDs {', '.join(map(str, message_ids))} in channel {channel.mention} removed from the reaction removal list.")
             else:
                 await ctx.send(f"No messages found in channel {channel.mention}.")
-            
+
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         # Detect if a role was added or removed
@@ -197,13 +196,13 @@ class RoleReplace(commands.Cog):
                     message = await channel.fetch_message(message_id)
                 except discord.NotFound:
                     continue
-
+                
                 for reaction in message.reactions:
                     if str(reaction.emoji) == emoji_to_check:
-                        users = [user async for user in reaction.users()]
-                        if member in users:
-                            await message.remove_reaction(reaction.emoji, member)
-                            break
-                            
+                        async for user in reaction.users():
+                            if member == user:
+                                await message.remove_reaction(reaction.emoji, member)
+                                break
+
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
