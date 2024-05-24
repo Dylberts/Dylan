@@ -6,9 +6,16 @@ class RoleReplace(commands.Cog):
     def __init__(self, bot: Red):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)  # Replace with a unique identifier
-        default_guild = {"role_sets": {}}
+        default_guild = {
+            "role_sets": {},
+            "reaction_settings": {
+                "roles": [],
+                "emojis": [],
+                "messages": {}
+            }
+        }
         self.config.register_guild(**default_guild)
-    
+
     @commands.group()
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
@@ -87,14 +94,67 @@ class RoleReplace(commands.Cog):
 
         await ctx.send(embed=embed)
     
+    @rolereplace.command()
+    async def addreactions(self, ctx, *roles: discord.Role):
+        """Add roles to the reaction removal list."""
+        async with self.config.guild(ctx.guild).reaction_settings() as settings:
+            role_ids = [role.id for role in roles]
+            settings["roles"] = list(set(settings["roles"] + role_ids))
+            await ctx.send(f"Roles {', '.join([role.name for role in roles])} added to the reaction removal list.")
+
+    @rolereplace.command()
+    async def removereactions(self, ctx, *roles: discord.Role):
+        """Remove roles from the reaction removal list."""
+        async with self.config.guild(ctx.guild).reaction_settings() as settings:
+            role_ids = [role.id for role in roles]
+            settings["roles"] = [role_id for role_id in settings["roles"] if role_id not in role_ids]
+            await ctx.send(f"Roles {', '.join([role.name for role in roles])} removed from the reaction removal list.")
+
+    @rolereplace.command()
+    async def addemojis(self, ctx, *emojis: str):
+        """Add emojis to the reaction removal list."""
+        async with self.config.guild(ctx.guild).reaction_settings() as settings:
+            settings["emojis"] = list(set(settings["emojis"] + list(emojis)))
+            await ctx.send(f"Emojis {', '.join(emojis)} added to the reaction removal list.")
+
+    @rolereplace.command()
+    async def removeemojis(self, ctx, *emojis: str):
+        """Remove emojis from the reaction removal list."""
+        async with self.config.guild(ctx.guild).reaction_settings() as settings:
+            settings["emojis"] = [emoji for emoji in settings["emojis"] if emoji not in emojis]
+            await ctx.send(f"Emojis {', '.join(emojis)} removed from the reaction removal list.")
+
+    @rolereplace.command()
+    async def addmessage(self, ctx, channel: discord.TextChannel, message_id: int):
+        """Add a message to the reaction removal list."""
+        async with self.config.guild(ctx.guild).reaction_settings() as settings:
+            settings["messages"][str(channel.id)] = message_id
+            await ctx.send(f"Message ID {message_id} in channel {channel.mention} added to the reaction removal list.")
+
+    @rolereplace.command()
+    async def removemessage(self, ctx, channel: discord.TextChannel):
+        """Remove a message from the reaction removal list."""
+        async with self.config.guild(ctx.guild).reaction_settings() as settings:
+            if str(channel.id) in settings["messages"]:
+                del settings["messages"][str(channel.id)]
+                await ctx.send(f"Message in channel {channel.mention} removed from the reaction removal list.")
+            else:
+                await ctx.send(f"No message found in channel {channel.mention}.")
+
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
         # Detect if a role was added
         added_roles = set(after.roles) - set(before.roles)
+        removed_roles = set(before.roles) - set(after.roles)
+
         if added_roles:
             for role in added_roles:
                 await self._handle_role_addition(after, role)
-    
+        
+        if removed_roles:
+            for role in removed_roles:
+                await self._handle_role_removal(after, role)
+
     async def _handle_role_addition(self, member, added_role):
         guild = member.guild
         role_sets = await self.config.guild(guild).role_sets()
@@ -104,6 +164,30 @@ class RoleReplace(commands.Cog):
                 roles_to_remove = [guild.get_role(role_id) for role_id in role_ids if role_id != added_role.id and guild.get_role(role_id) in member.roles]
                 if roles_to_remove:
                     await member.remove_roles(*roles_to_remove, reason=f"RoleReplace: Assigned {added_role.name}")
+
+    async def _handle_role_removal(self, member, removed_role):
+        guild = member.guild
+        settings = await self.config.guild(guild).reaction_settings()
+        
+        if removed_role.id not in settings["roles"]:
+            return
+
+        for channel_id_str, message_id in settings["messages"].items():
+            channel = guild.get_channel(int(channel_id_str))
+            if not channel:
+                continue
+
+            try:
+                message = await channel.fetch_message(message_id)
+            except discord.NotFound:
+                continue
+            
+            for reaction in message.reactions:
+                if str(reaction.emoji) in settings["emojis"]:
+                    users = await reaction.users().flatten()
+                    if member in users:
+                        await message.remove_reaction(reaction.emoji, member)
+                        break
 
 def setup(bot: Red):
     bot.add_cog(RoleReplace(bot))
