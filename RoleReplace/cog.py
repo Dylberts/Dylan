@@ -180,7 +180,7 @@ class RoleReplace(commands.Cog):
     async def _handle_role_removal(self, member, removed_role):
         guild = member.guild
         settings = await self.config.guild(guild).reaction_settings()
-        
+    
         role_emoji_mapping = settings["role_emoji_mapping"]
         if str(removed_role.id) not in role_emoji_mapping:
             return
@@ -191,12 +191,15 @@ class RoleReplace(commands.Cog):
             if not channel:
                 continue
 
+            if isinstance(message_ids, int):
+                message_ids = [message_ids]  # Convert to a list for uniform handling
+            
             for message_id in message_ids:
                 try:
                     message = await channel.fetch_message(message_id)
                 except discord.NotFound:
                     continue
-                
+            
                 for reaction in message.reactions:
                     if str(reaction.emoji) == emoji_to_check:
                         async for user in reaction.users():
