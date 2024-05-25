@@ -77,7 +77,7 @@ class RoleReplace(commands.Cog):
                 await ctx.send(f"Roles {', '.join(removed_roles)} removed from set '{set_name}'.")
             else:
                 await ctx.send("No roles were removed from the set.")
-
+                               
     @rolereplace.command()
     async def list(self, ctx):
         """List all role sets with their roles and emoji-role mappings."""
@@ -138,8 +138,8 @@ class RoleReplace(commands.Cog):
             await ctx.send("No data to display.")
             return
 
-        await button_menu(ctx, embeds, DEFAULT_CONTROLS)
-        
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
+
     @rolereplace.command()
     async def assignemoji(self, ctx, role: discord.Role, emoji: str):
         """Assign an emoji to a role for reaction removal."""
