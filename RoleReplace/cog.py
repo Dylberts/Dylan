@@ -109,13 +109,10 @@ class RoleReplace(commands.Cog):
             for channel_id, message_ids in messages.items():
                 channel = ctx.guild.get_channel(int(channel_id))
                 if channel:
-                    if isinstance(message_ids, list):
-                        message_ids_str = ", ".join(map(str, message_ids))  # Convert each message ID to string
-                    else:
-                        message_ids_str = str(message_ids)
-                        embed.add_field(name=f"Channel: {channel.name}", value=f"**Messages:** {message_ids_str}", inline=False)
+                    message_ids_str = ", ".join(map(str, message_ids))  # Convert each message ID to string
+                    embed.add_field(name=f"Channel: {channel.name}", value=f"**Messages:** {message_ids_str}", inline=False)
 
-            await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
     @rolereplace.command()
     async def assignemoji(self, ctx, role: discord.Role, emoji: str):
@@ -138,7 +135,10 @@ class RoleReplace(commands.Cog):
     async def addmessage(self, ctx, channel: discord.TextChannel, *message_ids: int):
         """Add messages to the reaction removal list."""
         async with self.config.guild(ctx.guild).reaction_settings() as settings:
-            settings["messages"][str(channel.id)] = message_ids
+            if str(channel.id) not in settings["messages"]:
+                settings["messages"][str(channel.id)] = list(message_ids)
+            else:
+                settings["messages"][str(channel.id)].extend(message_ids)
             await ctx.send(f"Message IDs {', '.join(map(str, message_ids))} in channel {channel.mention} added to the reaction removal list.")
 
     @rolereplace.command()
@@ -204,7 +204,7 @@ class RoleReplace(commands.Cog):
                     if str(reaction.emoji) == emoji_to_check:
                         async for user in reaction.users():
                             if member == user:
-                                await message.remove_reaction(reaction.emoji, member)
+                                await message.remove_reaction(reaction.emoji, user)
                                 break
 
 def setup(bot: Red):
