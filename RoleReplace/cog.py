@@ -2,6 +2,7 @@ import discord
 from redbot.core import commands, Config
 from redbot.core.bot import Red
 import asyncio
+from redbot.core.utils.menus import start_adding_reactions
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
 class RoleReplace(commands.Cog):
@@ -138,6 +139,7 @@ class RoleReplace(commands.Cog):
             await ctx.send("No data to display.")
             return
 
+        await start_adding_reactions(ctx.message, DEFAULT_CONTROLS)
         await menu(ctx, embeds, DEFAULT_CONTROLS)
 
     @rolereplace.command()
