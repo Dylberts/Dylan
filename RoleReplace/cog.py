@@ -89,32 +89,41 @@ class RoleReplace(commands.Cog):
             await ctx.send("There are no role sets, emoji-role mappings, or message settings configured.")
             return
 
-        embed = discord.Embed(title="📋 Role Replace Settings", color=0x6EDFBA)
-
-        if role_sets:
-            for set_name, role_ids in role_sets.items():
-                roles = [ctx.guild.get_role(role_id) for role_id in role_ids if ctx.guild.get_role(role_id)]
-                roles_str = ", ".join([role.name for role in roles]) if roles else "None"
-                embed.add_field(name=f"🗂️ Set: {set_name}", value=f"**Roles:** {roles_str}", inline=False)
-
-        if role_emoji_mapping:
-            for role_id, emoji in role_emoji_mapping.items():
-                role = ctx.guild.get_role(int(role_id))
-                if role:
-                    embed.add_field(name=f"🎭 Role: {role.name}", value=f"**Emoji:** {emoji}", inline=False)
-                else:
-                    embed.add_field(name=f"🎭 Role ID: {role_id}", value=f"**Emoji:** {emoji}", inline=False)
-
-        if messages:
-            for channel_id, message_ids in messages.items():
-                channel = ctx.guild.get_channel(int(channel_id))
-                if channel:
-                    message_ids_str = ", ".join(map(str, message_ids))  # Convert each message ID to string
-                    embed.add_field(name=f"💬 Channel: {channel.name}", value=f"**Messages:** {message_ids_str}", inline=False)
-
-        embed.set_footer(text="RoleReplace Settings")
-        await ctx.send(embed=embed)
+        embeds = []
+        embed = discord.Embed(title="Role Replace Settings", color=0x6EDFBA)
         
+        for set_name, role_ids in role_sets.items():
+            roles = [ctx.guild.get_role(role_id) for role_id in role_ids if ctx.guild.get_role(role_id)]
+            roles_str = ", ".join([role.name for role in roles]) if roles else "None"
+            embed.add_field(name=f"Set: {set_name}", value=f"**Roles:** {roles_str}", inline=False)
+            if len(embed.fields) == 5:  # Adjust the number of fields per embed as needed
+                embeds.append(embed)
+                embed = discord.Embed(title="Role Replace Settings (continued)", color=0x6EDFBA)
+
+        for role_id, emoji in role_emoji_mapping.items():
+            role = ctx.guild.get_role(int(role_id))
+            if role:
+                embed.add_field(name=f"Role: {role.name}", value=f"**Emoji:** {emoji}", inline=False)
+            else:
+                embed.add_field(name=f"Role ID: {role_id}", value=f"**Emoji:** {emoji}", inline=False)
+            if len(embed.fields) == 5:
+                embeds.append(embed)
+                embed = discord.Embed(title="Role Replace Settings (continued)", color=0x6EDFBA)
+
+        for channel_id, message_ids in messages.items():
+            channel = ctx.guild.get_channel(int(channel_id))
+            if channel:
+                message_ids_str = ", ".join(map(str, message_ids))  # Convert each message ID to string
+                embed.add_field(name=f"Channel: {channel.name}", value=f"**Messages:** {message_ids_str}", inline=False)
+                if len(embed.fields) == 5:
+                    embeds.append(embed)
+                    embed = discord.Embed(title="Role Replace Settings (continued)", color=0x6EDFBA)
+
+        if embed.fields:
+            embeds.append(embed)
+
+        await menu(ctx, embeds, DEFAULT_CONTROLS)
+ 
     @rolereplace.command()
     async def assignemoji(self, ctx, role: discord.Role, emoji: str):
         """Assign an emoji to a role for reaction removal."""
