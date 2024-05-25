@@ -2,7 +2,6 @@ import discord
 from redbot.core import commands, Config
 from redbot.core.bot import Red
 import asyncio
-from redbot.core.utils.menus import start_adding_reactions
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
 class RoleReplace(commands.Cog):
@@ -95,20 +94,20 @@ class RoleReplace(commands.Cog):
 
         # Create embeds for role sets
         if role_sets:
-            role_sets_embed = discord.Embed(title="Role Sets", color=0x6EDFBA)
+            role_sets_embed = discord.Embed(title="**Role Sets**", color=0x6EDFBA)
             for set_name, role_ids in role_sets.items():
                 roles = [ctx.guild.get_role(role_id) for role_id in role_ids if ctx.guild.get_role(role_id)]
                 roles_str = ", ".join([role.name for role in roles]) if roles else "None"
                 role_sets_embed.add_field(name=f"Set: {set_name}", value=f"**Roles:** {roles_str}", inline=False)
                 if len(role_sets_embed.fields) >= 5:
                     embeds.append(role_sets_embed)
-                    role_sets_embed = discord.Embed(title="Role Sets (continued)", color=0x6EDFBA)
+                    role_sets_embed = discord.Embed(title="**Role Sets... (continued)**", color=0x6EDFBA)
             if role_sets_embed.fields:
                 embeds.append(role_sets_embed)
 
         # Create a separate embed for role emoji mappings
         if role_emoji_mapping:
-            role_emoji_embed = discord.Embed(title="Role Emoji Mappings", color=0x6EDFBA)
+            role_emoji_embed = discord.Embed(title="**Role Emoji Mappings**", color=0x6EDFBA)
             for role_id, emoji in role_emoji_mapping.items():
                 role = ctx.guild.get_role(int(role_id))
                 if role:
@@ -117,13 +116,13 @@ class RoleReplace(commands.Cog):
                     role_emoji_embed.add_field(name=f"Role ID: {role_id}", value=f"**Emoji:** {emoji}", inline=False)
                 if len(role_emoji_embed.fields) >= 5:
                     embeds.append(role_emoji_embed)
-                    role_emoji_embed = discord.Embed(title="Role Emoji Mappings (continued)", color=0x6EDFBA)
+                    role_emoji_embed = discord.Embed(title="**Role Emoji Mappings... (continued)**", color=0x6EDFBA)
             if role_emoji_embed.fields:
                 embeds.append(role_emoji_embed)
 
         # Create embeds for messages
         if messages:
-            messages_embed = discord.Embed(title="Message Settings", color=0x6EDFBA)
+            messages_embed = discord.Embed(title="**Message Settings**", color=0x6EDFBA)
             for channel_id, message_ids in messages.items():
                 channel = ctx.guild.get_channel(int(channel_id))
                 if channel:
@@ -131,7 +130,7 @@ class RoleReplace(commands.Cog):
                     messages_embed.add_field(name=f"Channel: {channel.name}", value=f"**Messages:** {message_ids_str}", inline=False)
                     if len(messages_embed.fields) >= 5:
                         embeds.append(messages_embed)
-                        messages_embed = discord.Embed(title="Message Settings (continued)", color=0x6EDFBA)
+                        messages_embed = discord.Embed(title="**Message Settings... (continued)**", color=0x6EDFBA)
             if messages_embed.fields:
                 embeds.append(messages_embed)
 
@@ -139,7 +138,6 @@ class RoleReplace(commands.Cog):
             await ctx.send("No data to display.")
             return
 
-        await start_adding_reactions(ctx.message, DEFAULT_CONTROLS)
         await menu(ctx, embeds, DEFAULT_CONTROLS)
 
     @rolereplace.command()
