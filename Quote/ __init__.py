@@ -1,5 +1,5 @@
-from .cog import Quote
+from .cog import Quotes
 
 
 async def setup(bot):
-    await bot.add_cog(Quote(bot))
+    await bot.add_cog(Quotes(bot))
