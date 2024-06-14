@@ -3,7 +3,7 @@ from redbot.core import commands, Config
 import random
 import asyncio
 
-class Quote(commands.Cog):
+class Quote(commands.Cog, name="Quote"):
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
