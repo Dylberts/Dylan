@@ -13,7 +13,7 @@ class Quote(commands.Cog):
 
     async def cache_messages(self):
         await self.bot.wait_until_ready()
-        while True:
+        while not self.bot.is_closed():
             for guild in self.bot.guilds:
                 messages = []
                 for channel in guild.text_channels:
