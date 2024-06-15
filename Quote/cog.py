@@ -15,7 +15,7 @@ class Quote(commands.Cog):
         messages = []
 
         for channel in channels:
-            async for message in channel.history(limit=100):
+            async for message in channel.history(limit=500):
                 if message.author.bot:
                     continue
                 messages.append(message)
@@ -25,7 +25,7 @@ class Quote(commands.Cog):
             return
 
         message = random.choice(messages)
-        img = self.create_image(message.content, message.author)
+        img = await self.create_image(message.content, message.author)
 
         with io.BytesIO() as image_binary:
             img.save(image_binary, 'PNG')
@@ -39,7 +39,7 @@ class Quote(commands.Cog):
         
         await ctx.send(file=file, embed=embed)
 
-    def create_image(self, text, author):
+    async def create_image(self, text, author):
         # Create an image with Pillow
         width, height = 800, 200
         background_color = (245, 245, 245)
@@ -56,15 +56,15 @@ class Quote(commands.Cog):
             font = ImageFont.load_default()
 
         # Load user's avatar
-        avatar_size = 100
+        avatar_size = 128  # Adjusted size
         avatar_image = author.avatar.with_size(avatar_size)
 
         # Paste user's avatar onto the image
         img.paste(avatar_image, (20, 50))
 
         # Add text to image
-        text_position = (140, 50)
-        author_position = (140, 150)
+        text_position = (180, 50)  # Adjusted position
+        author_position = (180, 150)  # Adjusted position
         d.text(text_position, text, fill=text_color, font=font)
         d.text(author_position, f"- {author.display_name}", fill=text_color, font=font)
 
@@ -99,7 +99,7 @@ class Quote(commands.Cog):
         else:
             choice = random.choice(quotes)
 
-        img = self.create_image(choice, user)
+        img = await self.create_image(choice, user)
 
         with io.BytesIO() as image_binary:
             img.save(image_binary, 'PNG')
