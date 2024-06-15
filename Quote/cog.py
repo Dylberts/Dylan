@@ -8,24 +8,30 @@ import io
 class Quote(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.recent_messages = {}
+        self.cache = {}
+
+    async def cache_messages(self):
+        await self.bot.wait_until_ready()
+        while True:
+            for guild in self.bot.guilds:
+                messages = []
+                for channel in guild.text_channels:
+                    if channel.permissions_for(guild.me).read_message_history:
+                        async for message in channel.history(limit=100):
+                            if not message.author.bot:
+                                messages.append(message)
+                self.recent_messages[guild.id] = messages
+            await asyncio.sleep(300)  # Update every 5 minutes
 
     @commands.command(name="quote")
     async def random_quote(self, ctx):
-        channels = [channel for channel in ctx.guild.text_channels if channel.permissions_for(ctx.guild.me).read_message_history]
-        messages = []
-
-        for channel in channels:
-            async for message in channel.history(limit=500):
-                if message.author.bot:
-                    continue
-                messages.append(message)
-        
-        if not messages:
+        if ctx.guild.id not in self.recent_messages or not self.recent_messages[ctx.guild.id]:
             await ctx.send("No quotes found.")
             return
 
-        message = random.choice(messages)
-        img = self.create_image(message.content, message.author.display_name)
+        message = random.choice(self.recent_messages[ctx.guild.id])
+        img = self.get_cached_image(message.content, message.author.display_name)
 
         with io.BytesIO() as image_binary:
             img.save(image_binary, 'PNG')
@@ -38,30 +44,6 @@ class Quote(commands.Cog):
         embed.set_image(url="attachment://quote.png")
         
         await ctx.send(file=file, embed=embed)
-
-    def create_image(self, text, author):
-        # Create an image with Pillow
-        width, height = 800, 200
-        background_color = (245, 245, 245)
-        text_color = (0, 0, 0)
-        font_path = "arial.ttf"  # Ensure the path to your font file is correct
-        font_size = 24
-
-        img = Image.new('RGB', (width, height), color=background_color)
-        d = ImageDraw.Draw(img)
-
-        try:
-            font = ImageFont.truetype(font_path, font_size)
-        except IOError:
-            font = ImageFont.load_default()
-
-        # Add text to image
-        text_position = (20, 50)
-        author_position = (20, 150)
-        d.text(text_position, text, fill=text_color, font=font)
-        d.text(author_position, f"- {author}", fill=text_color, font=font)
-
-        return img
 
     @commands.command(name="rquote")
     async def random_funny_quote(self, ctx):
@@ -92,7 +74,7 @@ class Quote(commands.Cog):
         else:
             choice = random.choice(quotes)
 
-        img = self.create_image(choice, "Random Quote")
+        img = self.get_cached_image(choice, "Random Quote")
 
         with io.BytesIO() as image_binary:
             img.save(image_binary, 'PNG')
@@ -104,5 +86,38 @@ class Quote(commands.Cog):
         
         await ctx.send(file=file, embed=embed)
 
+    def get_cached_image(self, text, author):
+        key = (text, author)
+        if key not in self.cache:
+            self.cache[key] = self.create_image(text, author)
+        return self.cache[key]
+
+    def create_image(self, text, author):
+        width, height = 800, 200
+        background_color = (245, 245, 245)
+        text_color = (0, 0, 0)
+        font_path = "arial.ttf"  # Ensure the path to your font file is correct
+        font_size = 24
+
+        img = Image.new('RGB', (width, height), color=background_color)
+        d = ImageDraw.Draw(img)
+
+        try:
+            font = ImageFont.truetype(font_path, font_size)
+        except IOError:
+            font = ImageFont.load_default()
+
+        text_position = (20, 50)
+        author_position = (20, 150)
+        d.text(text_position, text, fill=text_color, font=font)
+        d.text(author_position, f"- {author}", fill=text_color, font=font)
+
+        return img
+
+    def cog_unload(self):
+        self.bot.loop.create_task(self.cache_messages_task.cancel())
+
 def setup(bot):
-    bot.add_cog(Quote(bot))
+    cog = Quote(bot)
+    bot.add_cog(cog)
+    bot.loop.create_task(cog.cache_messages())
