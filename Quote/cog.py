@@ -15,7 +15,7 @@ class Quote(commands.Cog):
         messages = []
 
         for channel in channels:
-            async for message in channel.history(limit=100):
+            async for message in channel.history(limit=500):
                 if message.author.bot:
                     continue
                 messages.append(message)
@@ -42,7 +42,7 @@ class Quote(commands.Cog):
     async def create_image(self, text, author):
         # Create an image with Pillow
         width, height = 800, 200
-        background_color = (245, 245, 245)
+        background_color = (245, 245, 245)  # RGB tuple
         text_color = (0, 0, 0)
         font_path = "arial.ttf"  # Ensure the path to your font file is correct
         font_size = 24
