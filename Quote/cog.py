@@ -1,37 +1,30 @@
 import discord
-from redbot.core import commands, Config
+from redbot.core import commands
 import random
 import asyncio
 
-class Quote(commands.Cog):
+class QuoteCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=1234567890)
-        default_guild = {"quotes": []}
-        self.config.register_guild(**default_guild)
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.author.bot:
-            return
-        async with self.config.guild(message.guild).quotes() as quotes:
-            quotes.append((message.author.id, message.content))
 
     @commands.command(name="quote")
     async def random_quote(self, ctx):
-        quotes = await self.config.guild(ctx.guild).quotes()
-        if not quotes:
+        channels = [channel for channel in ctx.guild.text_channels if channel.permissions_for(ctx.guild.me).read_message_history]
+        messages = []
+
+        for channel in channels:
+            async for message in channel.history(limit=500):
+                if message.author.bot:
+                    continue
+                messages.append(message)
+        
+        if not messages:
             await ctx.send("No quotes found.")
             return
 
-        author_id, content = random.choice(quotes)
-        author = ctx.guild.get_member(author_id)
-
-        embed = discord.Embed(description=content, color=0x6EDFBA)
-        if author:
-            embed.set_author(name=author.display_name, icon_url=author.avatar_url)
-        else:
-            embed.set_author(name="Unknown user")
+        message = random.choice(messages)
+        embed = discord.Embed(description=message.content, color=0x6EDFBA)
+        embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
         
         await ctx.send(embed=embed)
 
@@ -68,4 +61,4 @@ class Quote(commands.Cog):
         await ctx.send(embed=embed)
 
 def setup(bot):
-    bot.add_cog(Quote(bot))
+    bot.add_cog(QuoteCog(bot))
