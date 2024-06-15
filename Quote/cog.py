@@ -15,7 +15,7 @@ class Quote(commands.Cog):
         messages = []
 
         for channel in channels:
-            async for message in channel.history(limit=500):
+            async for message in channel.history(limit=100):
                 if message.author.bot:
                     continue
                 messages.append(message)
@@ -59,8 +59,15 @@ class Quote(commands.Cog):
         avatar_size = 128  # Adjusted size
         avatar_image = author.avatar.with_size(avatar_size)
 
+        # Calculate the paste box coordinates
+        left = 20
+        top = (height - avatar_size) // 2
+        right = left + avatar_size
+        bottom = top + avatar_size
+        paste_box = (left, top, right, bottom)
+
         # Paste user's avatar onto the image
-        img.paste(avatar_image, (20, 50))
+        img.paste(avatar_image, paste_box)
 
         # Add text to image
         text_position = (180, 50)  # Adjusted position
