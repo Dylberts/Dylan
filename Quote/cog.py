@@ -2,6 +2,8 @@ import discord
 from redbot.core import commands
 import random
 import asyncio
+from PIL import Image, ImageDraw, ImageFont
+import io
 
 class Quote(commands.Cog):
     def __init__(self, bot):
@@ -23,10 +25,43 @@ class Quote(commands.Cog):
             return
 
         message = random.choice(messages)
-        embed = discord.Embed(description=message.content, color=0x6EDFBA)
+        img = self.create_image(message.content, message.author.display_name)
+
+        with io.BytesIO() as image_binary:
+            img.save(image_binary, 'PNG')
+            image_binary.seek(0)
+            file = discord.File(fp=image_binary, filename='quote.png')
+
+        embed = discord.Embed(color=0x6EDFBA)
         embed.set_author(name=message.author.display_name, icon_url=message.author.avatar.url)
+        embed.set_footer(text=f"Message from {message.channel.name}")
+        embed.set_image(url="attachment://quote.png")
         
-        await ctx.send(embed=embed)
+        await ctx.send(file=file, embed=embed)
+
+    def create_image(self, text, author):
+        # Create an image with Pillow
+        width, height = 800, 200
+        background_color = (245, 245, 245)
+        text_color = (0, 0, 0)
+        font_path = "arial.ttf"  # Ensure the path to your font file is correct
+        font_size = 24
+
+        img = Image.new('RGB', (width, height), color=background_color)
+        d = ImageDraw.Draw(img)
+
+        try:
+            font = ImageFont.truetype(font_path, font_size)
+        except IOError:
+            font = ImageFont.load_default()
+
+        # Add text to image
+        text_position = (20, 50)
+        author_position = (20, 150)
+        d.text(text_position, text, fill=text_color, font=font)
+        d.text(author_position, f"- {author}", fill=text_color, font=font)
+
+        return img
 
     @commands.command(name="rquote")
     async def random_funny_quote(self, ctx):
@@ -57,8 +92,17 @@ class Quote(commands.Cog):
         else:
             choice = random.choice(quotes)
 
-        embed = discord.Embed(description=choice, color=0x6EDFBA)
-        await ctx.send(embed=embed)
+        img = self.create_image(choice, "Random Quote")
+
+        with io.BytesIO() as image_binary:
+            img.save(image_binary, 'PNG')
+            image_binary.seek(0)
+            file = discord.File(fp=image_binary, filename='quote.png')
+
+        embed = discord.Embed(color=0x6EDFBA)
+        embed.set_image(url="attachment://quote.png")
+        
+        await ctx.send(file=file, embed=embed)
 
 def setup(bot):
     bot.add_cog(Quote(bot))
