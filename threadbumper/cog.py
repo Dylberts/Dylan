@@ -3,7 +3,7 @@ from redbot.core.bot import Red
 from discord import Thread
 import asyncio
 
-class ThreadBumper(commands.Cog):
+class threadbumper(commands.Cog):
     """Cog to keep threads alive by silently bumping them."""
 
     def __init__(self, bot: Red):
@@ -53,4 +53,4 @@ class ThreadBumper(commands.Cog):
             self.bumping_task.cancel()
 
 def setup(bot: Red):
-    bot.add_cog(ThreadBumper(bot))
+    bot.add_cog(threadbumper(bot))
