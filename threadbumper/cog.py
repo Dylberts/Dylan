@@ -23,7 +23,7 @@ class threadbumper(commands.Cog):
     async def enable_bumper(self, ctx):
         """Enable the thread bumper."""
         await self.config.guild(ctx.guild).enabled.set(True)
-        await ctx.send("Thread bumper enabled.")
+        await ctx.send("Understood! Thread bumper is now: **enabled**.")
         if not self.bumping_task:
             self.bumping_task = self.bot.loop.create_task(self.bump_threads(ctx.guild))
 
@@ -31,7 +31,7 @@ class threadbumper(commands.Cog):
     async def disable_bumper(self, ctx):
         """Disable the thread bumper."""
         await self.config.guild(ctx.guild).enabled.set(False)
-        await ctx.send("Thread bumper disabled.")
+        await ctx.send("Understood! Thread bumper is now: **disabled**.")
         if self.bumping_task:
             self.bumping_task.cancel()
             self.bumping_task = None
@@ -44,8 +44,11 @@ class threadbumper(commands.Cog):
                     break
                 for thread in channel.threads:
                     if not thread.locked and not thread.archived:
-                        await thread.send("Bumping to keep alive.")
-                        await asyncio.sleep(5)  # Sleep to avoid rate limiting
+                        try:
+                            await thread.edit(name=thread.name + ' ')
+                            await asyncio.sleep(5)  # Sleep to avoid rate limiting
+                        except:
+                            pass  # Handle any exceptions if the thread can't be edited
             await asyncio.sleep(71 * 60 * 60)  # Check every 71 hours
 
     def cog_unload(self):
