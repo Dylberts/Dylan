@@ -4,6 +4,9 @@ from redbot.core import commands
 class Tags(commands.Cog):
     """A simple cog for Red Bot with a button link"""
 
+    def __init__(self, bot):
+        self.bot = bot
+
     @commands.command()
     async def tiermaker(self, ctx):
         """Responds with a friendly message and a button link"""
@@ -14,5 +17,5 @@ class Tags(commands.Cog):
 
         await ctx.send("Hello! How can I assist you today?", view=view)
 
-def setup(bot):
-    bot.add_cog(Tags())
+async def setup(bot):
+    await bot.add_cog(Tags(bot))
