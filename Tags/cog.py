@@ -20,7 +20,7 @@ class Tags(commands.Cog):
         view.add_item(button)
 
         embed = discord.Embed(color=discord.Color(0x6EDFBA))
-        embed.set_image(url="https://imgur.com/m2V37I9")  # Replace with your image URL
+        embed.set_image(url="https://i.postimg.cc/zvgYjQp9/IMG-8698.jpg")  # Replace with your image URL
 
         await ctx.send(embed=embed, view=view)
 
