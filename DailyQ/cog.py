@@ -142,7 +142,7 @@ class DailyQ(commands.Cog):
     async def generate_random_question(self):
         """Generate a random social-based question using an API."""
         async with aiohttp.ClientSession() as session:
-            async with session.get('https://either.io/api/questions/random') as response:
+            async with session.get('https://opinionapi.herokuapp.com/api') as response:
                 if response.status == 200:
                     data = await response.json()
                     question = data["data"]
