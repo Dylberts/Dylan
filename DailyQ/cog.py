@@ -171,7 +171,7 @@ class DailyQ(commands.Cog):
         """Generate a 'Would You Rather' question using the 'would-you-rather-api'."""
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get('https://would-you-rather.willbeaumont.repl.co') as response:
+                async with session.get('https://either.io/api/questions') as response:
                     if response.status == 200:
                         data = await response.json()
                         question = data.get("question")
