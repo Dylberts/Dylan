@@ -158,14 +158,15 @@ class DailyQ(commands.Cog):
                 await channel.send(embed=embed)
             await asyncio.sleep(24 * 60 * 60)
 
-    async def generate_random_question(self):
+    async def generate_random_question():
         """Generate a 'Would You Rather' question using the 'would-you-rather-api'."""
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get('https://opentdb.com/api.php?amount=1&type=multiple') as response:
+                # Using a hypothetical 'Would You Rather' API
+                async with session.get('https://would-you-rather-api-url.com/random') as response:
                     if response.status == 200:
                         data = await response.json()
-                        question = data.get("data", "No questions are currently available.")
+                        question = data.get("question", "No questions are currently available.")
                         return question
             except aiohttp.ClientError as e:
                 print(f"Error fetching question from API: {e}")
