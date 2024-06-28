@@ -120,7 +120,11 @@ class DailyQ(commands.Cog):
         if questions:
             question = random.choice(questions)
         else:
-            question = await self.generate_random_question()
+            try:
+                question = await self.generate_random_question()
+            except Exception as e:
+                await ctx.send(f"Failed to fetch a random question: {e}")
+                return
 
         embed = discord.Embed(description=f"**Daily Question:**\n*{question}*\n\n", color=0x6EDFBA)
         embed.set_footer(text="Use `!question ask` to submit your own questions!")
@@ -147,7 +151,12 @@ class DailyQ(commands.Cog):
                     questions.remove(question)
                     asked_questions.append(question)
                 else:
-                    question = await self.generate_random_question()
+                    try:
+                        question = await self.generate_random_question()
+                    except Exception as e:
+                        print(f"Failed to fetch a random question for guild {guild.id}: {e}")
+                        continue
+
                     asked_questions.append(question)
 
                 await self.config.guild(guild).questions.set(questions)
@@ -162,24 +171,16 @@ class DailyQ(commands.Cog):
         """Generate a 'Would You Rather' question using the 'would-you-rather-api'."""
         async with aiohttp.ClientSession() as session:
             try:
-                # Using a hypothetical 'Would You Rather' API
                 async with session.get('https://would-you-rather-api-url.com/random') as response:
                     if response.status == 200:
                         data = await response.json()
                         question = data.get("question")
                         return question
+                    else:
+                        raise Exception(f"API returned a non-200 status code: {response.status}")
             except aiohttp.ClientError as e:
                 print(f"Error fetching question from API: {e}")
-
-           # # Fallback questions if the API fails
-          #  fallback_questions = [
-             #   "Would you rather have the ability to fly or be invisible?",
-             #   "Would you rather have unlimited money or unlimited time?",
-              #  "Would you rather live in a cave or live in a treehouse?",
-             #   "Would you rather be able to talk to animals or speak all foreign languages?",
-             #   "Would you rather always have to sing instead of speaking or dance everywhere you go?"
-          #  ]
-         #   return random.choice(fallback_questions)
+                raise
 
     async def reset_submissions_task(self):
         while True:
