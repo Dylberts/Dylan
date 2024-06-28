@@ -63,16 +63,33 @@ class DailyQ(commands.Cog):
             await ctx.send("You have already submitted 3 questions today. Please wait until tomorrow to submit more.")
             return
 
-        async with self.config.guild(ctx.guild).questions() as questions:
-            questions.append(question)
+        # Ask for confirmation
+        confirm_message = await ctx.send("Are you sure you want to submit this question? React with ✅ to confirm or ❌ to cancel.")
+        await confirm_message.add_reaction("✅")
+        await confirm_message.add_reaction("❌")
 
-        submissions[user_id] = user_submissions + 1
-        await self.config.guild(ctx.guild).submissions.set(submissions)
+        def check(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ["✅", "❌"]
 
-        if not guild_config["last_reset"]:
-            await self.config.guild(ctx.guild).last_reset.set(now.isoformat())
+        try:
+            reaction, user = await self.bot.wait_for("reaction_add", timeout=30.0, check=check)
+            if str(reaction.emoji) == "✅":
+                async with self.config.guild(ctx.guild).questions() as questions:
+                    questions.append(question)
 
-        await ctx.send("Your question has been submitted!")
+                submissions[user_id] = user_submissions + 1
+                await self.config.guild(ctx.guild).submissions.set(submissions)
+
+                if not guild_config["last_reset"]:
+                    await self.config.guild(ctx.guild).last_reset.set(now.isoformat())
+
+                await ctx.send("Your question has been submitted!")
+            else:
+                await ctx.send("Your question submission has been canceled.")
+        except asyncio.TimeoutError:
+            await ctx.send("You took too long to respond. Please try again.")
+
+        await confirm_message.delete(delay=10)
 
     @question.command()
     @checks.admin_or_permissions(manage_guild=True)
@@ -106,6 +123,7 @@ class DailyQ(commands.Cog):
             question = await self.generate_random_question()
 
         embed = discord.Embed(description=f"**Daily Question:**\n*{question}*\n\n", color=0x6EDFBA)
+        embed.set_footer(text="Use `!question ask` to submit your own questions!")
         await channel.send(embed=embed)
 
     async def ask_question_task(self):
@@ -136,6 +154,7 @@ class DailyQ(commands.Cog):
                 await self.config.guild(guild).asked_questions.set(asked_questions)
 
                 embed = discord.Embed(description=question, color=0x6EDFBA)
+                embed.set_footer(text="Use `!question ask` to submit your own questions!")
                 await channel.send(embed=embed)
             await asyncio.sleep(24 * 60 * 60)
 
