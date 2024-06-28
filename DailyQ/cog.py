@@ -140,16 +140,14 @@ class DailyQ(commands.Cog):
             await asyncio.sleep(24 * 60 * 60)
 
     async def generate_random_question(self):
-        """Generate a conversation-based question using the Open Trivia Database (OTDB) API."""
+        """Generate a 'Would You Rather' question using the 'would-you-rather-api'."""
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get('https://opentdb.com/api.php?amount=1&category=conversation') as response:
+                async with session.get('https://www.zerotoheroes.com/api/whyrandom') as response:
                     if response.status == 200:
                         data = await response.json()
-                        question = data["results"][0]["question"]
+                        question = data.get("data", "No questions are currently available.")
                         return question
-                    else:
-                        return random.choice(self.fun_questions)
                         
             except aiohttp.ClientError as e:
                 print(f"Error fetching conversation-based question from OTDB API: {e}")
