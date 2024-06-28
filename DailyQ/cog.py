@@ -166,20 +166,20 @@ class DailyQ(commands.Cog):
                 async with session.get('https://would-you-rather-api-url.com/random') as response:
                     if response.status == 200:
                         data = await response.json()
-                        question = data.get("question", "No questions are currently available.")
+                        question = data.get("question")
                         return question
             except aiohttp.ClientError as e:
                 print(f"Error fetching question from API: {e}")
 
-            # Fallback questions if the API fails
-            fallback_questions = [
-                "Would you rather have the ability to fly or be invisible?",
-                "Would you rather have unlimited money or unlimited time?",
-                "Would you rather live in a cave or live in a treehouse?",
-                "Would you rather be able to talk to animals or speak all foreign languages?",
-                "Would you rather always have to sing instead of speaking or dance everywhere you go?"
-            ]
-            return random.choice(fallback_questions)
+           # # Fallback questions if the API fails
+          #  fallback_questions = [
+             #   "Would you rather have the ability to fly or be invisible?",
+             #   "Would you rather have unlimited money or unlimited time?",
+              #  "Would you rather live in a cave or live in a treehouse?",
+             #   "Would you rather be able to talk to animals or speak all foreign languages?",
+             #   "Would you rather always have to sing instead of speaking or dance everywhere you go?"
+          #  ]
+         #   return random.choice(fallback_questions)
 
     async def reset_submissions_task(self):
         while True:
