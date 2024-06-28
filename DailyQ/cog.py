@@ -181,10 +181,6 @@ class DailyQ(commands.Cog):
             ]
             return random.choice(fallback_questions)
 
-    async def testq(self, ctx):
-        question = await self.generate_random_question()
-        await ctx.send(question)
-
     async def reset_submissions_task(self):
         while True:
             await self.bot.wait_until_ready()
