@@ -143,7 +143,7 @@ class DailyQ(commands.Cog):
         """Generate a 'Would You Rather' question using the 'would-you-rather-api'."""
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get('https://www.zerotoheroes.com/api/whyrandom') as response:
+                async with session.get('https://api.brianmcgee.dev/why') as response:
                     if response.status == 200:
                         data = await response.json()
                         question = data.get("data", "No questions are currently available.")
