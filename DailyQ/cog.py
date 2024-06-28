@@ -105,7 +105,7 @@ class DailyQ(commands.Cog):
         else:
             question = await self.generate_random_question()
 
-        embed = discord.Embed(description=f"**Daily Question:\n***{question}*\n\nHave questions you'd like asked?\nUse the command ``!question ask``", color=0x6EDFBA)
+        embed = discord.Embed(description=f"**Daily Question:**\n*{question}*\n\n", color=0x6EDFBA)
         await channel.send(embed=embed)
 
     async def ask_question_task(self):
@@ -139,16 +139,21 @@ class DailyQ(commands.Cog):
                 await channel.send(embed=embed)
             await asyncio.sleep(24 * 60 * 60)
 
-    async def generate_random_question(self):
-        """Generate a random social-based question using an API."""
-        async with aiohttp.ClientSession() as session:
-            async with session.get('https://opinionapi.herokuapp.com/api') as response:
-                if response.status == 200:
-                    data = await response.json()
-                    question = data["data"]
-                    return question
-                else:
-                    return "There are no questions available, try using the command ``!question ask`` to add your own!"
+  async def generate_random_question(self):
+     """Generate a conversation-based question using the Open Trivia Database (OTDB) API."""
+     async with aiohttp.ClientSession() as session:
+         try:
+             async with session.get('https://opentdb.com/api.php?amount=1&category=conversation') as response:
+                 if response.status == 200:
+                     data = await response.json()
+                     question = data["results"][0]["question"]
+                     return question
+                 else:
+                     return random.choice(self.fun_questions)
+                     
+         except aiohttp.ClientError as e:
+             print(f"Error fetching conversation-based question from OTDB API: {e}")
+             return random.choice(self.fun_questions)
 
     async def reset_submissions_task(self):
         while True:
