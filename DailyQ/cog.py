@@ -172,7 +172,7 @@ class DailyQ(commands.Cog):
         async with aiohttp.ClientSession() as session:
             for _ in range(3):  # Retry up to 3 times
                 try:
-                    async with session.get('https://either.io/api/questions', timeout=10) as response:
+                    async with session.get('https://rapidapi.com/thunderapi-thunderapi-default/api/would-you-rather/playground/apiendpoint_16563991-16d3-4e54-8d35-c8f34fa4c63c', timeout=10) as response:
                         if response.status == 200:
                             data = await response.json()
                             question = random.choice(data)
