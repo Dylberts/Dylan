@@ -168,19 +168,21 @@ class DailyQ(commands.Cog):
             await asyncio.sleep(24 * 60 * 60)
 
     async def generate_random_question(self):
-        """Generate a 'Would You Rather' question using the 'would-you-rather-api'."""
+        """Generate a 'Would You Rather' question using the actual API."""
         async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get('https://either.io/api/questions') as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        question = data.get("question")
-                        return question
-                    else:
-                        raise Exception(f"API returned a non-200 status code: {response.status}")
-            except aiohttp.ClientError as e:
-                print(f"Error fetching question from API: {e}")
-                raise
+            for _ in range(3):  # Retry up to 3 times
+                try:
+                    async with session.get('https://either.io/api/questions', timeout=10) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            question = random.choice(data)
+                            return question.get("option_a", "")
+                        else:
+                            print(f"API returned a non-200 status code: {response.status}")
+                except aiohttp.ClientError as e:
+                    print(f"Error fetching question from API: {e}")
+                await asyncio.sleep(2)  # Wait before retrying
+            raise Exception("Failed to fetch question after multiple attempts")
 
     async def reset_submissions_task(self):
         while True:
