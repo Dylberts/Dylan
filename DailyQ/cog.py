@@ -162,7 +162,7 @@ class DailyQ(commands.Cog):
         """Generate a 'Would You Rather' question using the 'would-you-rather-api'."""
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get('https://api.brianmcgee.dev/why') as response:
+                async with session.get('https://opentdb.com/api.php?amount=1&type=multiple') as response:
                     if response.status == 200:
                         data = await response.json()
                         question = data.get("data", "No questions are currently available.")
