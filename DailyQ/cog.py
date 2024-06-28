@@ -105,9 +105,8 @@ class DailyQ(commands.Cog):
         else:
             question = await self.generate_random_question()
 
-        embed = discord.Embed(description=f"**Test Question:** {question}", color=0x6EDFBA)
+        embed = discord.Embed(description=f"**Daily Question:\n** {question}", color=0x6EDFBA)
         await channel.send(embed=embed)
-        await ctx.send("A test question has been sent.")
 
     async def ask_question_task(self):
         while True:
