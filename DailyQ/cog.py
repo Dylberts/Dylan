@@ -105,7 +105,7 @@ class DailyQ(commands.Cog):
         else:
             question = await self.generate_random_question()
 
-        embed = discord.Embed(description=f"**Daily Question:\n** {question}", color=0x6EDFBA)
+        embed = discord.Embed(description=f"**Daily Question:\n***{question}*\n\nHave questions you'd like asked?\nUse the command ``!question ask``", color=0x6EDFBA)
         await channel.send(embed=embed)
 
     async def ask_question_task(self):
@@ -142,13 +142,13 @@ class DailyQ(commands.Cog):
     async def generate_random_question(self):
         """Generate a random social-based question using an API."""
         async with aiohttp.ClientSession() as session:
-            async with session.get('https://would-you-rather-api.abaanshanid.repl.co/') as response:
+            async with session.get('https://either.io/api/questions/random') as response:
                 if response.status == 200:
                     data = await response.json()
                     question = data["data"]
                     return question
                 else:
-                    return "Could not fetch a random question, please try again later."
+                    return "There are no questions available, try using the command ``!question ask`` to add your own!"
 
     async def reset_submissions_task(self):
         while True:
