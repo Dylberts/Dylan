@@ -158,7 +158,7 @@ class DailyQ(commands.Cog):
                 await channel.send(embed=embed)
             await asyncio.sleep(24 * 60 * 60)
 
-    async def generate_random_question():
+    async def generate_random_question(self):
         """Generate a 'Would You Rather' question using the 'would-you-rather-api'."""
         async with aiohttp.ClientSession() as session:
             try:
@@ -180,6 +180,10 @@ class DailyQ(commands.Cog):
                 "Would you rather always have to sing instead of speaking or dance everywhere you go?"
             ]
             return random.choice(fallback_questions)
+
+    async def testq(self, ctx):
+        question = await self.generate_random_question()
+        await ctx.send(question)
 
     async def reset_submissions_task(self):
         while True:
