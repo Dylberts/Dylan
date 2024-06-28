@@ -1,12 +1,11 @@
 import discord
 import random
 import aiohttp
+import asyncio
 from redbot.core import commands, Config, checks
 from redbot.core.bot import Red
 from redbot.core.commands import Context
-from redbot.core.utils import get_end_user_data_statement, mod
 from datetime import datetime, timedelta
-from redbot.core.utils import bounded_gather
 
 class DailyQ(commands.Cog):
     """Cog to ask a daily question in a specified channel."""
@@ -106,7 +105,8 @@ class DailyQ(commands.Cog):
         else:
             question = await self.generate_random_question()
 
-        await channel.send(f"Test Question: {question}")
+        embed = discord.Embed(description=f"**Test Question:** {question}", color=0x6EDFBA)
+        await channel.send(embed=embed)
         await ctx.send("A test question has been sent.")
 
     async def ask_question_task(self):
@@ -136,16 +136,17 @@ class DailyQ(commands.Cog):
                 await self.config.guild(guild).questions.set(questions)
                 await self.config.guild(guild).asked_questions.set(asked_questions)
 
-                await channel.send(question)
+                embed = discord.Embed(description=question, color=0x6EDFBA)
+                await channel.send(embed=embed)
             await asyncio.sleep(24 * 60 * 60)
 
     async def generate_random_question(self):
-        """Generate a random question using the internet."""
+        """Generate a random social-based question using an API."""
         async with aiohttp.ClientSession() as session:
-            async with session.get('https://opentdb.com/api.php?amount=1&type=multiple') as response:
+            async with session.get('https://would-you-rather-api.abaanshanid.repl.co/') as response:
                 if response.status == 200:
                     data = await response.json()
-                    question = data["results"][0]["question"]
+                    question = data["data"]
                     return question
                 else:
                     return "Could not fetch a random question, please try again later."
