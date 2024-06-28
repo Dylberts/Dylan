@@ -4,8 +4,9 @@ import aiohttp
 from redbot.core import commands, Config, checks
 from redbot.core.bot import Red
 from redbot.core.commands import Context
-from redbot.core.utils import tasks
+from redbot.core.utils import get_end_user_data_statement, mod
 from datetime import datetime, timedelta
+from redbot.core.utils import bounded_gather
 
 class DailyQ(commands.Cog):
     """Cog to ask a daily question in a specified channel."""
@@ -22,8 +23,8 @@ class DailyQ(commands.Cog):
             "last_reset": None  # Track the last reset time
         }
         self.config.register_guild(**default_guild)
-        self.ask_question_task.start()
-        self.reset_submissions_task.start()
+        self.ask_question_task = self.bot.loop.create_task(self.ask_question_task())
+        self.reset_submissions_task = self.bot.loop.create_task(self.reset_submissions_task())
 
     def cog_unload(self):
         self.ask_question_task.cancel()
@@ -83,7 +84,8 @@ class DailyQ(commands.Cog):
             return
         
         await self.config.guild(ctx.guild).frequency.set(hours)
-        self.ask_question_task.change_interval(hours=hours)
+        self.ask_question_task.cancel()
+        self.ask_question_task = self.bot.loop.create_task(self.ask_question_task())
         await ctx.send(f"The question frequency has been set to every {hours} hours.")
 
     @question.command()
@@ -107,33 +109,35 @@ class DailyQ(commands.Cog):
         await channel.send(f"Test Question: {question}")
         await ctx.send("A test question has been sent.")
 
-    @tasks.loop(hours=24)
     async def ask_question_task(self):
-        for guild in self.bot.guilds:
-            config = await self.config.guild(guild).all()
-            channel_id = config["channel_id"]
-            questions = config["questions"]
-            asked_questions = config["asked_questions"]
+        while True:
+            await self.bot.wait_until_ready()
+            for guild in self.bot.guilds:
+                config = await self.config.guild(guild).all()
+                channel_id = config["channel_id"]
+                questions = config["questions"]
+                asked_questions = config["asked_questions"]
 
-            if not channel_id:
-                continue
+                if not channel_id:
+                    continue
 
-            channel = self.bot.get_channel(channel_id)
-            if not channel:
-                continue
+                channel = self.bot.get_channel(channel_id)
+                if not channel:
+                    continue
 
-            if questions:
-                question = random.choice(questions)
-                questions.remove(question)
-                asked_questions.append(question)
-            else:
-                question = await self.generate_random_question()
-                asked_questions.append(question)
+                if questions:
+                    question = random.choice(questions)
+                    questions.remove(question)
+                    asked_questions.append(question)
+                else:
+                    question = await self.generate_random_question()
+                    asked_questions.append(question)
 
-            await self.config.guild(guild).questions.set(questions)
-            await self.config.guild(guild).asked_questions.set(asked_questions)
+                await self.config.guild(guild).questions.set(questions)
+                await self.config.guild(guild).asked_questions.set(asked_questions)
 
-            await channel.send(question)
+                await channel.send(question)
+            await asyncio.sleep(24 * 60 * 60)
 
     async def generate_random_question(self):
         """Generate a random question using the internet."""
@@ -146,24 +150,18 @@ class DailyQ(commands.Cog):
                 else:
                     return "Could not fetch a random question, please try again later."
 
-    @tasks.loop(hours=24)
     async def reset_submissions_task(self):
-        now = datetime.utcnow()
-        for guild in self.bot.guilds:
-            guild_config = await self.config.guild(guild).all()
-            last_reset = guild_config["last_reset"]
+        while True:
+            await self.bot.wait_until_ready()
+            now = datetime.utcnow()
+            for guild in self.bot.guilds:
+                guild_config = await self.config.guild(guild).all()
+                last_reset = guild_config["last_reset"]
 
-            if not last_reset or (now - datetime.fromisoformat(last_reset)) > timedelta(days=1):
-                await self.config.guild(guild).submissions.set({})
-                await self.config.guild(guild).last_reset.set(now.isoformat())
-
-    @ask_question_task.before_loop
-    async def before_ask_question_task(self):
-        await self.bot.wait_until_ready()
-
-    @reset_submissions_task.before_loop
-    async def before_reset_submissions_task(self):
-        await self.bot.wait_until_ready()
+                if not last_reset or (now - datetime.fromisoformat(last_reset)) > timedelta(days=1):
+                    await self.config.guild(guild).submissions.set({})
+                    await self.config.guild(guild).last_reset.set(now.isoformat())
+            await asyncio.sleep(24 * 60 * 60)
 
 def setup(bot: Red):
     bot.add_cog(DailyQ(bot))
