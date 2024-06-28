@@ -139,21 +139,21 @@ class DailyQ(commands.Cog):
                 await channel.send(embed=embed)
             await asyncio.sleep(24 * 60 * 60)
 
-  async def generate_random_question(self):
-     """Generate a conversation-based question using the Open Trivia Database (OTDB) API."""
-     async with aiohttp.ClientSession() as session:
-         try:
-             async with session.get('https://opentdb.com/api.php?amount=1&category=conversation') as response:
-                 if response.status == 200:
-                     data = await response.json()
-                     question = data["results"][0]["question"]
-                     return question
-                 else:
-                     return random.choice(self.fun_questions)
-                     
-         except aiohttp.ClientError as e:
-             print(f"Error fetching conversation-based question from OTDB API: {e}")
-             return random.choice(self.fun_questions)
+    async def generate_random_question(self):
+        """Generate a conversation-based question using the Open Trivia Database (OTDB) API."""
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get('https://opentdb.com/api.php?amount=1&category=conversation') as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        question = data["results"][0]["question"]
+                        return question
+                    else:
+                        return random.choice(self.fun_questions)
+                        
+            except aiohttp.ClientError as e:
+                print(f"Error fetching conversation-based question from OTDB API: {e}")
+                return random.choice(self.fun_questions)
 
     async def reset_submissions_task(self):
         while True:
