@@ -45,11 +45,15 @@ class DailyQ(commands.Cog):
 
     @question.command()
     @checks.admin_or_permissions(manage_guild=True)
-    async def setchannel(self, ctx: Context, channel: discord.abc.GuildChannel):
-        """Set the channel or thread where the daily question will be asked."""
+    async def setchannel(self, ctx: Context, channel: discord.abc.GuildChannel, message_id: int = None):
+        """Set the channel or thread (and optionally a specific post) where the daily question will be asked."""
         if isinstance(channel, (discord.TextChannel, discord.Thread)):
             await self.config.guild(ctx.guild).channel_id.set(channel.id)
-            await ctx.send(f"The daily question location has been set to {channel.mention}")
+            await self.config.guild(ctx.guild).message_id.set(message_id)
+            location_msg = f"The daily question location has been set to {channel.mention}"
+            if message_id:
+                location_msg += f" with message ID {message_id}"
+            await ctx.send(location_msg)
         else:
             await ctx.send("The specified channel must be a text channel or a thread.")
 
