@@ -5,7 +5,8 @@ from redbot.core import commands, Config, checks
 from redbot.core.bot import Red
 from redbot.core.commands import Context
 from datetime import datetime, timedelta
-import Qlist  # Importing the Qlist module
+import importlib.util
+import os
 
 class DailyQ(commands.Cog):
     """Cog to ask a daily question in a specified channel."""
@@ -24,6 +25,12 @@ class DailyQ(commands.Cog):
         self.config.register_guild(**default_guild)
         self.ask_question_task = self.bot.loop.create_task(self.ask_question_task())
         self.reset_submissions_task = self.bot.loop.create_task(self.reset_submissions_task())
+
+        # Load Qlist.py from the DailyQ folder
+        qlist_path = os.path.join(os.path.dirname(__file__), 'DailyQ', 'Qlist.py')
+        spec = importlib.util.spec_from_file_location("Qlist", qlist_path)
+        self.Qlist = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.Qlist)
 
     def cog_unload(self):
         self.ask_question_task.cancel()
@@ -121,7 +128,7 @@ class DailyQ(commands.Cog):
         if member_questions:
             question = random.choice(member_questions)
         else:
-            question = random.choice(Qlist.questions)
+            question = random.choice(self.Qlist.questions)
 
         embed = discord.Embed(description=f"**Daily Question:**\n*{question}*\n\n", color=0x6EDFBA)
         embed.set_footer(text="Use `!question ask` to submit your own questions!")
@@ -148,7 +155,7 @@ class DailyQ(commands.Cog):
                     member_questions.remove(question)
                     asked_member_questions.append(question)
                 else:
-                    question = random.choice(Qlist.questions)
+                    question = random.choice(self.Qlist.questions)
 
                 await self.config.guild(guild).member_questions.set(member_questions)
                 await self.config.guild(guild).asked_member_questions.set(asked_member_questions)
@@ -166,7 +173,7 @@ class DailyQ(commands.Cog):
                 guild_config = await self.config.guild(guild).all()
                 last_reset = guild_config["last_reset"]
 
-                if not last_reset or (now - datetime.fromisoformat(last_reset)) > timedelta(days(1)):
+                if not last_reset or (now - datetime.fromisoformat(last_reset)) > timedelta(days=1):
                     await self.config.guild(guild).submissions.set({})
                     await self.config.guild(guild).last_reset.set(now.isoformat())
             await asyncio.sleep(24 * 60 * 60)
