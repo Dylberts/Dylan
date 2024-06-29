@@ -46,7 +46,7 @@ class DailyQ(commands.Cog):
     @question.command()
     @checks.admin_or_permissions(manage_guild=True)
     async def setchannel(self, ctx: Context, channel: discord.abc.GuildChannel, message_id: int = None):
-        """Set the channel or thread (and optionally a specific post) where the daily question will be asked."""
+        """Set the channel, thread, or a specific post within a forum channel where the daily question will be asked."""
         if isinstance(channel, (discord.TextChannel, discord.Thread)):
             await self.config.guild(ctx.guild).channel_id.set(channel.id)
             await self.config.guild(ctx.guild).message_id.set(message_id)
@@ -54,8 +54,26 @@ class DailyQ(commands.Cog):
             if message_id:
                 location_msg += f" with message ID {message_id}"
             await ctx.send(location_msg)
+        elif isinstance(channel, discord.ForumChannel):
+            if message_id:
+                # Validate that the message ID is in a thread of the forum
+                thread = None
+                async for thread in channel.threads:
+                    try:
+                        message = await thread.fetch_message(message_id)
+                        break
+                    except discord.NotFound:
+                        continue
+                if thread and message:
+                    await self.config.guild(ctx.guild).channel_id.set(thread.id)
+                    await self.config.guild(ctx.guild).message_id.set(message_id)
+                    await ctx.send(f"The daily question location has been set to the post in {thread.mention} with message ID {message_id}")
+                else:
+                    await ctx.send("The specified message ID was not found in any thread within the forum channel.")
+            else:
+                await ctx.send("For forum channels, you must specify a message ID within a thread.")
         else:
-            await ctx.send("The specified channel must be a text channel or a thread.")
+            await ctx.send("The specified channel must be a text channel, thread, or forum channel.")
 
     @question.command()
     async def ask(self, ctx: Context, *, question: str):
