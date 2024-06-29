@@ -20,7 +20,8 @@ class DailyQ(commands.Cog):
             "asked_member_questions": [],
             "frequency": 24,  # Default to 24 hours
             "submissions": {},  # Track submissions per user
-            "last_reset": None  # Track the last reset time
+            "last_reset": None,  # Track the last reset time
+            "asked_qlist_questions": []  # Track asked Qlist questions
         }
         self.config.register_guild(**default_guild)
         self.ask_question_task = self.bot.loop.create_task(self.ask_question_task())
@@ -52,6 +53,8 @@ class DailyQ(commands.Cog):
     @question.command()
     async def ask(self, ctx: Context, *, question: str):
         """Submit a question to be asked."""
+        await ctx.message.delete()  # Delete the user's message immediately
+
         guild_config = await self.config.guild(ctx.guild).all()
         user_id = str(ctx.author.id)
         now = datetime.utcnow()
@@ -120,6 +123,7 @@ class DailyQ(commands.Cog):
         channel_id = guild_config["channel_id"]
         member_questions = guild_config["member_questions"]
         asked_member_questions = guild_config["asked_member_questions"]
+        asked_qlist_questions = guild_config["asked_qlist_questions"]
         channel = self.bot.get_channel(channel_id)
 
         if not channel_id or not channel:
@@ -129,10 +133,15 @@ class DailyQ(commands.Cog):
         if member_questions:
             question = random.choice(member_questions)
         else:
-            question = random.choice(self.Qlist.questions)
+            available_qlist_questions = [q for q in self.Qlist.questions if q not in asked_qlist_questions]
+            if not available_qlist_questions:
+                # Reset asked_qlist_questions if all have been asked
+                asked_qlist_questions = []
+                available_qlist_questions = self.Qlist.questions
+            question = random.choice(available_qlist_questions)
 
-        embed = discord.Embed(description=f"**Daily Question:**\n*{question}*\n\n", color=0x6EDFBA)
-        embed.set_footer(text="Use `!question ask` to submit your own questions!")
+        embed = discord.Embed(description=f"**DAILY QUESTION: 💬**\n\n*{question}*\n\n", color=0x6EDFBA)
+        embed.set_footer(text="Try `!question ask` to submit your own questions")
         await channel.send(embed=embed)
 
     async def ask_question_task(self):
@@ -143,6 +152,7 @@ class DailyQ(commands.Cog):
                 channel_id = config["channel_id"]
                 member_questions = config["member_questions"]
                 asked_member_questions = config["asked_member_questions"]
+                asked_qlist_questions = config["asked_qlist_questions"]
 
                 if not channel_id:
                     continue
@@ -156,13 +166,20 @@ class DailyQ(commands.Cog):
                     member_questions.remove(question)
                     asked_member_questions.append(question)
                 else:
-                    question = random.choice(self.Qlist.questions)
+                    available_qlist_questions = [q for q in self.Qlist.questions if q not in asked_qlist_questions]
+                    if not available_qlist_questions:
+                        # Reset asked_qlist_questions if all have been asked
+                        asked_qlist_questions = []
+                        available_qlist_questions = self.Qlist.questions
+                    question = random.choice(available_qlist_questions)
+                    asked_qlist_questions.append(question)
 
                 await self.config.guild(guild).member_questions.set(member_questions)
                 await self.config.guild(guild).asked_member_questions.set(asked_member_questions)
+                await self.config.guild(guild).asked_qlist_questions.set(asked_qlist_questions)
 
-                embed = discord.Embed(description=question, color=0x6EDFBA)
-                embed.set_footer(text="Use `!question ask` to submit your own questions!")
+                embed = discord.Embed(description=f"**DAILY QUESTION: 💬**\n\n*{question}*\n\n", color=0x6EDFBA)
+                embed.set_footer(text="Try `!question ask` to submit your own questions")
                 await channel.send(embed=embed)
             await asyncio.sleep(24 * 60 * 60)
 
