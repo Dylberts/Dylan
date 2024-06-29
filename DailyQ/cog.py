@@ -58,7 +58,7 @@ class DailyQ(commands.Cog):
             if message_id:
                 # Validate that the message ID is in a thread of the forum
                 thread = None
-                async for thread in channel.threads:
+                for thread in channel.threads:
                     try:
                         message = await thread.fetch_message(message_id)
                         break
