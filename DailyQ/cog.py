@@ -168,15 +168,15 @@ class DailyQ(commands.Cog):
             await asyncio.sleep(24 * 60 * 60)
 
     async def generate_random_question(self):
-        """Generate a 'Would You Rather' question using the actual API."""
+        """Generate a random trivia question using the Open Trivia Database API."""
         async with aiohttp.ClientSession() as session:
             for _ in range(3):  # Retry up to 3 times
                 try:
-                    async with session.get('https://rapidapi.com/thunderapi-thunderapi-default/api/would-you-rather/playground/apiendpoint_16563991-16d3-4e54-8d35-c8f34fa4c63c', timeout=10) as response:
+                    async with session.get('https://opentdb.com/api.php?amount=1&type=multiple', timeout=10) as response:
                         if response.status == 200:
                             data = await response.json()
-                            question = random.choice(data)
-                            return question.get("option_a", "")
+                            question = data['results'][0]['question']
+                            return question
                         else:
                             print(f"API returned a non-200 status code: {response.status}")
                 except aiohttp.ClientError as e:
