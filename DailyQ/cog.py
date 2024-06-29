@@ -45,10 +45,13 @@ class DailyQ(commands.Cog):
 
     @question.command()
     @checks.admin_or_permissions(manage_guild=True)
-    async def setchannel(self, ctx: Context, channel: discord.TextChannel):
-        """Set the channel where the daily question will be asked."""
-        await self.config.guild(ctx.guild).channel_id.set(channel.id)
-        await ctx.send(f"The daily question channel has been set to {channel.mention}")
+    async def setchannel(self, ctx: Context, channel: discord.abc.GuildChannel):
+        """Set the channel or thread where the daily question will be asked."""
+        if isinstance(channel, (discord.TextChannel, discord.Thread)):
+            await self.config.guild(ctx.guild).channel_id.set(channel.id)
+            await ctx.send(f"The daily question location has been set to {channel.mention}")
+        else:
+            await ctx.send("The specified channel must be a text channel or a thread.")
 
     @question.command()
     async def ask(self, ctx: Context, *, question: str):
@@ -124,10 +127,10 @@ class DailyQ(commands.Cog):
         member_questions = guild_config["member_questions"]
         asked_member_questions = guild_config["asked_member_questions"]
         asked_qlist_questions = guild_config["asked_qlist_questions"]
-        channel = self.bot.get_channel(channel_id)
+        channel = self.bot.get_channel(channel_id) or self.bot.get_thread(channel_id)
 
         if not channel_id or not channel:
-            await ctx.send("The daily question channel is not set or cannot be found.")
+            await ctx.send("The daily question location is not set or cannot be found.")
             return
 
         if member_questions:
@@ -157,7 +160,7 @@ class DailyQ(commands.Cog):
                 if not channel_id:
                     continue
 
-                channel = self.bot.get_channel(channel_id)
+                channel = self.bot.get_channel(channel_id) or self.bot.get_thread(channel_id)
                 if not channel:
                     continue
 
