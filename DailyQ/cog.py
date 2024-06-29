@@ -1,11 +1,11 @@
 import discord
 import random
-import aiohttp
 import asyncio
 from redbot.core import commands, Config, checks
 from redbot.core.bot import Red
 from redbot.core.commands import Context
 from datetime import datetime, timedelta
+import Qlist  # Importing the Qlist module
 
 class DailyQ(commands.Cog):
     """Cog to ask a daily question in a specified channel."""
@@ -15,8 +15,8 @@ class DailyQ(commands.Cog):
         self.config = Config.get_conf(self, identifier=1234567890)
         default_guild = {
             "channel_id": None,
-            "questions": [],
-            "asked_questions": [],
+            "member_questions": [],
+            "asked_member_questions": [],
             "frequency": 24,  # Default to 24 hours
             "submissions": {},  # Track submissions per user
             "last_reset": None  # Track the last reset time
@@ -74,8 +74,8 @@ class DailyQ(commands.Cog):
         try:
             reaction, user = await self.bot.wait_for("reaction_add", timeout=30.0, check=check)
             if str(reaction.emoji) == "✅":
-                async with self.config.guild(ctx.guild).questions() as questions:
-                    questions.append(question)
+                async with self.config.guild(ctx.guild).member_questions() as member_questions:
+                    member_questions.append(question)
 
                 submissions[user_id] = user_submissions + 1
                 await self.config.guild(ctx.guild).submissions.set(submissions)
@@ -110,21 +110,18 @@ class DailyQ(commands.Cog):
         """Ask a test question immediately without affecting the daily question timer or queue."""
         guild_config = await self.config.guild(ctx.guild).all()
         channel_id = guild_config["channel_id"]
-        questions = guild_config["questions"]
+        member_questions = guild_config["member_questions"]
+        asked_member_questions = guild_config["asked_member_questions"]
         channel = self.bot.get_channel(channel_id)
 
         if not channel_id or not channel:
             await ctx.send("The daily question channel is not set or cannot be found.")
             return
 
-        if questions:
-            question = random.choice(questions)
+        if member_questions:
+            question = random.choice(member_questions)
         else:
-            try:
-                question = await self.generate_random_question()
-            except Exception as e:
-                await ctx.send(f"Failed to fetch a random question: {e}")
-                return
+            question = random.choice(Qlist.questions)
 
         embed = discord.Embed(description=f"**Daily Question:**\n*{question}*\n\n", color=0x6EDFBA)
         embed.set_footer(text="Use `!question ask` to submit your own questions!")
@@ -136,8 +133,8 @@ class DailyQ(commands.Cog):
             for guild in self.bot.guilds:
                 config = await self.config.guild(guild).all()
                 channel_id = config["channel_id"]
-                questions = config["questions"]
-                asked_questions = config["asked_questions"]
+                member_questions = config["member_questions"]
+                asked_member_questions = config["asked_member_questions"]
 
                 if not channel_id:
                     continue
@@ -146,43 +143,20 @@ class DailyQ(commands.Cog):
                 if not channel:
                     continue
 
-                if questions:
-                    question = random.choice(questions)
-                    questions.remove(question)
-                    asked_questions.append(question)
+                if member_questions:
+                    question = random.choice(member_questions)
+                    member_questions.remove(question)
+                    asked_member_questions.append(question)
                 else:
-                    try:
-                        question = await self.generate_random_question()
-                    except Exception as e:
-                        print(f"Failed to fetch a random question for guild {guild.id}: {e}")
-                        continue
+                    question = random.choice(Qlist.questions)
 
-                    asked_questions.append(question)
-
-                await self.config.guild(guild).questions.set(questions)
-                await self.config.guild(guild).asked_questions.set(asked_questions)
+                await self.config.guild(guild).member_questions.set(member_questions)
+                await self.config.guild(guild).asked_member_questions.set(asked_member_questions)
 
                 embed = discord.Embed(description=question, color=0x6EDFBA)
                 embed.set_footer(text="Use `!question ask` to submit your own questions!")
                 await channel.send(embed=embed)
             await asyncio.sleep(24 * 60 * 60)
-
-    async def generate_random_question(self):
-        """Generate a random trivia question using the Open Trivia Database API."""
-        async with aiohttp.ClientSession() as session:
-            for _ in range(3):  # Retry up to 3 times
-                try:
-                    async with session.get('https://opentdb.com/api.php?amount=1&type=multiple', timeout=10) as response:
-                        if response.status == 200:
-                            data = await response.json()
-                            question = data['results'][0]['question']
-                            return question
-                        else:
-                            print(f"API returned a non-200 status code: {response.status}")
-                except aiohttp.ClientError as e:
-                    print(f"Error fetching question from API: {e}")
-                await asyncio.sleep(2)  # Wait before retrying
-            raise Exception("Failed to fetch question after multiple attempts")
 
     async def reset_submissions_task(self):
         while True:
@@ -192,7 +166,7 @@ class DailyQ(commands.Cog):
                 guild_config = await self.config.guild(guild).all()
                 last_reset = guild_config["last_reset"]
 
-                if not last_reset or (now - datetime.fromisoformat(last_reset)) > timedelta(days=1):
+                if not last_reset or (now - datetime.fromisoformat(last_reset)) > timedelta(days(1)):
                     await self.config.guild(guild).submissions.set({})
                     await self.config.guild(guild).last_reset.set(now.isoformat())
             await asyncio.sleep(24 * 60 * 60)
