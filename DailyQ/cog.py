@@ -140,7 +140,8 @@ class DailyQ(commands.Cog):
                 available_qlist_questions = self.Qlist.questions
             question = random.choice(available_qlist_questions)
 
-        embed = discord.Embed(description=f"**DAILY QUESTION 💬**\n*{question}*\n\n", color=0x6EDFBA)
+        embed = discord.Embed(description=f"~~                                      ~~\n*{question}*\n~~                                      ~~\n\n", color=0x6EDFBA)
+        embed.set_title(text="**DAILY QUESTION 💬**")
         embed.set_footer(text="Try `!question ask` to submit your own questions")
         await channel.send(embed=embed)
 
@@ -178,7 +179,8 @@ class DailyQ(commands.Cog):
                 await self.config.guild(guild).asked_member_questions.set(asked_member_questions)
                 await self.config.guild(guild).asked_qlist_questions.set(asked_qlist_questions)
 
-                embed = discord.Embed(description=f"**DAILY QUESTION 💬**\n*{question}*\n\n", color=0x6EDFBA)
+                embed = discord.Embed(description=f"~~                                      ~~\n*{question}*\n~~                                      ~~\n\n", color=0x6EDFBA)
+                embed.set_title(text="**DAILY QUESTION 💬**")
                 embed.set_footer(text="Try `!question ask` to submit your own questions")
                 await channel.send(embed=embed)
             await asyncio.sleep(24 * 60 * 60)
