@@ -27,7 +27,8 @@ class DailyQ(commands.Cog):
         self.reset_submissions_task = self.bot.loop.create_task(self.reset_submissions_task())
 
         # Load Qlist.py from the DailyQ folder
-        qlist_path = os.path.join(os.path.dirname(__file__), 'DailyQ', 'Qlist.py')
+        cog_dir = os.path.dirname(os.path.abspath(__file__))
+        qlist_path = os.path.join(cog_dir, 'Qlist.py')
         spec = importlib.util.spec_from_file_location("Qlist", qlist_path)
         self.Qlist = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.Qlist)
