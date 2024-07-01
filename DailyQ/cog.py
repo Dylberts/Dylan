@@ -1,4 +1,4 @@
-import discord
+import import discord
 import random
 import asyncio
 from redbot.core import commands, Config, checks
@@ -11,7 +11,7 @@ import os
 
 class SkipButton(discord.ui.Button):
     def __init__(self, dailyq_cog, initial_count=0):
-        super().__init__(label=f"Skip Question ({initial_count})", style=discord.ButtonStyle.danger)
+        super().__init__(label=f"Skip Question ({initial_count})", style=discord.ButtonStyle.secondary)
         self.dailyq_cog = dailyq_cog
         self.vote_count = initial_count
         self.voters = set()
@@ -24,7 +24,8 @@ class SkipButton(discord.ui.Button):
 
         self.voters.add(user_id)
         self.vote_count += 1
-        if self.vote_count < 4:
+        skip_threshold = await self.dailyq_cog.config.guild(interaction.guild).skip_threshold()
+        if self.vote_count < skip_threshold:
             self.label = f"Skip Question ({self.vote_count})"
             await interaction.response.edit_message(view=self.view)
         else:
@@ -53,7 +54,8 @@ class DailyQ(commands.Cog):
             "frequency": 24,  # Default to 24 hours
             "submissions": {},  # Track submissions per user
             "last_reset": None,  # Track the last reset time
-            "asked_qlist_questions": []  # Track asked Qlist questions
+            "asked_qlist_questions": [],  # Track asked Qlist questions
+            "skip_threshold": 4  # Default number of votes needed to skip a question
         }
         self.config.register_guild(**default_guild)
         self.ask_question_task = self.bot.loop.create_task(self.ask_question_task())
@@ -174,6 +176,17 @@ class DailyQ(commands.Cog):
 
     @question.command()
     @checks.admin_or_permissions(manage_guild=True)
+    async def setskipthreshold(self, ctx: Context, threshold: int):
+        """Set the number of votes needed to skip a question."""
+        if threshold < 1:
+            await ctx.send("Skip threshold must be at least 1.")
+            return
+        
+        await self.config.guild(ctx.guild).skip_threshold.set(threshold)
+        await ctx.send(f"The skip threshold has been set to {threshold} votes.")
+
+    @question.command()
+    @checks.admin_or_permissions(manage_guild=True)
     async def testq(self, ctx: Context):
         """Ask a test question immediately without affecting the daily question timer or queue."""
         guild_config = await self.config.guild(ctx.guild).all()
@@ -197,9 +210,11 @@ class DailyQ(commands.Cog):
                 available_qlist_questions = self.Qlist.questions
             question = random.choice(available_qlist_questions)
 
-        embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
+                embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
         embed.set_footer(text="Try `!question ask` to submit your own questions")
-        await channel.send(embed=embed, view=SkipView(self))
+
+        view = SkipView(self)
+        await channel.send(embed=embed, view=view)
 
     async def ask_question_task(self):
         while True:
@@ -237,10 +252,11 @@ class DailyQ(commands.Cog):
 
                 embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
                 embed.set_footer(text="Try `!question ask` to submit your own questions")
-                await channel.send(embed=embed, view=SkipView(self))
-            
-            frequency = await self.config.guild(guild).frequency()
-            await asyncio.sleep(frequency * 60 * 60)
+
+                view = SkipView(self)
+                await channel.send(embed=embed, view=view)
+
+            await asyncio.sleep(config["frequency"] * 60 * 60)
 
     async def reset_submissions_task(self):
         while True:
@@ -261,9 +277,12 @@ class DailyQ(commands.Cog):
         member_questions = config["member_questions"]
         asked_member_questions = config["asked_member_questions"]
         asked_qlist_questions = config["asked_qlist_questions"]
-        channel = self.bot.get_channel(channel_id) or self.bot.get_thread(channel_id)
 
-        if not channel_id or not channel:
+        if not channel_id:
+            return
+
+        channel = self.bot.get_channel(channel_id) or self.bot.get_thread(channel_id)
+        if not channel:
             return
 
         if member_questions:
@@ -285,8 +304,20 @@ class DailyQ(commands.Cog):
 
         embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
         embed.set_footer(text="Try `!question ask` to submit your own questions")
-        await channel.send(embed=embed, view=SkipView(self))
 
+        view = SkipView(self)
+        await channel.send(embed=embed, view=view)
+
+    @question.command()
+    @checks.admin_or_permissions(manage_guild=True)
+    async def setskipthreshold(self, ctx: Context, threshold: int):
+        """Set the number of votes required to skip the daily question."""
+        if threshold < 1:
+            await ctx.send("The skip threshold must be at least 1.")
+            return
+
+        await self.config.guild(ctx.guild).skip_threshold.set(threshold)
+        await ctx.send(f"The skip vote threshold has been set to {threshold}.")
 
 def setup(bot: Red):
     bot.add_cog(DailyQ(bot))
