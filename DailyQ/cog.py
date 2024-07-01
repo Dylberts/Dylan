@@ -8,12 +8,11 @@ from datetime import datetime, timedelta
 import importlib.util
 import os
 
-
 class SkipButton(discord.ui.Button):
-    def __init__(self, dailyq_cog, initial_count=0):
-        super().__init__(label=f"Skip Question ({initial_count})", style=discord.ButtonStyle.secondary)
-        self.dailyq_cog = dailyq_cog
-        self.vote_count = initial_count
+    def __init__(self, cog, initial_count=0):
+        super().__init__(style=discord.ButtonStyle.secondary, label=f"Skip Question ({initial_count})")
+        self.cog = cog
+        self.skip_count = initial_count
         self.voters = set()
 
     async def callback(self, interaction: discord.Interaction):
@@ -23,23 +22,22 @@ class SkipButton(discord.ui.Button):
             return
 
         self.voters.add(user_id)
-        self.vote_count += 1
-        skip_threshold = await self.dailyq_cog.config.guild(interaction.guild).skip_threshold()
-        if self.vote_count < skip_threshold:
-            self.label = f"Skip Question ({self.vote_count})"
-            await interaction.response.edit_message(view=self.view)
-        else:
-            self.label = "Now Skipping..."
-            self.disabled = True
-            await interaction.response.edit_message(view=self.view)
-            await self.dailyq_cog.skip_question(interaction.guild)
+        self.skip_count += 1
+        guild_id = interaction.guild.id
+        config = await self.cog.config.guild_from_id(guild_id).all()
+        skip_threshold = config["skip_threshold"]
 
+        if self.skip_count >= skip_threshold:
+            await interaction.response.send_message("The question will be skipped now.", ephemeral=True)
+            await self.cog.skip_question(interaction.guild)
+        else:
+            self.label = f"Skip Question ({self.skip_count})"
+            await interaction.response.edit_message(view=self.view)
 
 class SkipView(discord.ui.View):
-    def __init__(self, dailyq_cog, initial_count=0):
-        super().__init__(timeout=None)
-        self.add_item(SkipButton(dailyq_cog, initial_count))
-
+    def __init__(self, cog):
+        super().__init__()
+        self.add_item(SkipButton(cog))
 
 class DailyQ(commands.Cog):
     """Cog to ask a daily question in a specified channel."""
@@ -55,7 +53,7 @@ class DailyQ(commands.Cog):
             "submissions": {},  # Track submissions per user
             "last_reset": None,  # Track the last reset time
             "asked_qlist_questions": [],  # Track asked Qlist questions
-            "skip_threshold": 4  # Default number of votes needed to skip a question
+            "skip_threshold": 4  # Default skip threshold
         }
         self.config.register_guild(**default_guild)
         self.ask_question_task = self.bot.loop.create_task(self.ask_question_task())
@@ -176,17 +174,6 @@ class DailyQ(commands.Cog):
 
     @question.command()
     @checks.admin_or_permissions(manage_guild=True)
-    async def setskipthreshold(self, ctx: Context, threshold: int):
-        """Set the number of votes needed to skip a question."""
-        if threshold < 1:
-            await ctx.send("Skip threshold must be at least 1.")
-            return
-        
-        await self.config.guild(ctx.guild).skip_threshold.set(threshold)
-        await ctx.send(f"The skip threshold has been set to {threshold} votes.")
-
-    @question.command()
-    @checks.admin_or_permissions(manage_guild=True)
     async def testq(self, ctx: Context):
         """Ask a test question immediately without affecting the daily question timer or queue."""
         guild_config = await self.config.guild(ctx.guild).all()
@@ -226,7 +213,7 @@ class DailyQ(commands.Cog):
                 asked_member_questions = config["asked_member_questions"]
                 asked_qlist_questions = config["asked_qlist_questions"]
 
-                if not channel_id:
+                if not channel_id:                   
                     continue
 
                 channel = self.bot.get_channel(channel_id) or self.bot.get_thread(channel_id)
@@ -255,8 +242,7 @@ class DailyQ(commands.Cog):
 
                 view = SkipView(self)
                 await channel.send(embed=embed, view=view)
-
-            await asyncio.sleep(config["frequency"] * 60 * 60)
+            await asyncio.sleep(24 * 60 * 60)
 
     async def reset_submissions_task(self):
         while True:
@@ -271,15 +257,23 @@ class DailyQ(commands.Cog):
                     await self.config.guild(guild).last_reset.set(now.isoformat())
             await asyncio.sleep(24 * 60 * 60)
 
+    @question.command()
+    @checks.admin_or_permissions(manage_guild=True)
+    async def set_skip_threshold(self, ctx: Context, threshold: int):
+        """Set the number of votes required to skip a question."""
+        if threshold < 1:
+            await ctx.send("Skip threshold must be at least 1.")
+            return
+
+        await self.config.guild(ctx.guild).skip_threshold.set(threshold)
+        await ctx.send(f"The skip threshold has been set to {threshold} votes.")
+
     async def skip_question(self, guild):
         config = await self.config.guild(guild).all()
         channel_id = config["channel_id"]
         member_questions = config["member_questions"]
         asked_member_questions = config["asked_member_questions"]
         asked_qlist_questions = config["asked_qlist_questions"]
-
-        if not channel_id:
-            return
 
         channel = self.bot.get_channel(channel_id) or self.bot.get_thread(channel_id)
         if not channel:
@@ -308,16 +302,7 @@ class DailyQ(commands.Cog):
         view = SkipView(self)
         await channel.send(embed=embed, view=view)
 
-    @question.command()
-    @checks.admin_or_permissions(manage_guild=True)
-    async def setskipthreshold(self, ctx: Context, threshold: int):
-        """Set the number of votes required to skip the daily question."""
-        if threshold < 1:
-            await ctx.send("The skip threshold must be at least 1.")
-            return
-
-        await self.config.guild(ctx.guild).skip_threshold.set(threshold)
-        await ctx.send(f"The skip vote threshold has been set to {threshold}.")
-
 def setup(bot: Red):
     bot.add_cog(DailyQ(bot))
+
+                  
