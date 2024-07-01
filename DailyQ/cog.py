@@ -207,7 +207,7 @@ class DailyQ(commands.Cog):
             for guild in self.bot.guilds:
                 config = await self.config.guild(guild).all()
                 channel_id = config["channel_id"]
-                                member_questions = config["member_questions"]
+                member_questions = config["member_questions"]
                 asked_member_questions = config["asked_member_questions"]
                 asked_qlist_questions = config["asked_qlist_questions"]
 
