@@ -8,6 +8,38 @@ from datetime import datetime, timedelta
 import importlib.util
 import os
 
+
+class SkipButton(discord.ui.Button):
+    def __init__(self, dailyq_cog, initial_count=0):
+        super().__init__(label=f"Skip Question ({initial_count})", style=discord.ButtonStyle.danger)
+        self.dailyq_cog = dailyq_cog
+        self.vote_count = initial_count
+        self.voters = set()
+
+    async def callback(self, interaction: discord.Interaction):
+        user_id = interaction.user.id
+        if user_id in self.voters:
+            await interaction.response.send_message("You have already voted to skip this question.", ephemeral=True)
+            return
+
+        self.voters.add(user_id)
+        self.vote_count += 1
+        if self.vote_count < 4:
+            self.label = f"Skip Question ({self.vote_count})"
+            await interaction.response.edit_message(view=self.view)
+        else:
+            self.label = "Now Skipping..."
+            self.disabled = True
+            await interaction.response.edit_message(view=self.view)
+            await self.dailyq_cog.skip_question(interaction.guild)
+
+
+class SkipView(discord.ui.View):
+    def __init__(self, dailyq_cog, initial_count=0):
+        super().__init__(timeout=None)
+        self.add_item(SkipButton(dailyq_cog, initial_count))
+
+
 class DailyQ(commands.Cog):
     """Cog to ask a daily question in a specified channel."""
 
@@ -167,7 +199,7 @@ class DailyQ(commands.Cog):
 
         embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
         embed.set_footer(text="Try `!question ask` to submit your own questions")
-        await channel.send(embed=embed)
+        await channel.send(embed=embed, view=SkipView(self))
 
     async def ask_question_task(self):
         while True:
@@ -175,7 +207,7 @@ class DailyQ(commands.Cog):
             for guild in self.bot.guilds:
                 config = await self.config.guild(guild).all()
                 channel_id = config["channel_id"]
-                member_questions = config["member_questions"]
+                                member_questions = config["member_questions"]
                 asked_member_questions = config["asked_member_questions"]
                 asked_qlist_questions = config["asked_qlist_questions"]
 
@@ -205,8 +237,10 @@ class DailyQ(commands.Cog):
 
                 embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
                 embed.set_footer(text="Try `!question ask` to submit your own questions")
-                await channel.send(embed=embed)
-            await asyncio.sleep(24 * 60 * 60)
+                await channel.send(embed=embed, view=SkipView(self))
+            
+            frequency = await self.config.guild(guild).frequency()
+            await asyncio.sleep(frequency * 60 * 60)
 
     async def reset_submissions_task(self):
         while True:
@@ -220,6 +254,39 @@ class DailyQ(commands.Cog):
                     await self.config.guild(guild).submissions.set({})
                     await self.config.guild(guild).last_reset.set(now.isoformat())
             await asyncio.sleep(24 * 60 * 60)
+
+    async def skip_question(self, guild):
+        config = await self.config.guild(guild).all()
+        channel_id = config["channel_id"]
+        member_questions = config["member_questions"]
+        asked_member_questions = config["asked_member_questions"]
+        asked_qlist_questions = config["asked_qlist_questions"]
+        channel = self.bot.get_channel(channel_id) or self.bot.get_thread(channel_id)
+
+        if not channel_id or not channel:
+            return
+
+        if member_questions:
+            question = random.choice(member_questions)
+            member_questions.remove(question)
+            asked_member_questions.append(question)
+        else:
+            available_qlist_questions = [q for q in self.Qlist.questions if q not in asked_qlist_questions]
+            if not available_qlist_questions:
+                # Reset asked_qlist_questions if all have been asked
+                asked_qlist_questions = []
+                available_qlist_questions = self.Qlist.questions
+            question = random.choice(available_qlist_questions)
+            asked_qlist_questions.append(question)
+
+        await self.config.guild(guild).member_questions.set(member_questions)
+        await self.config.guild(guild).asked_member_questions.set(asked_member_questions)
+        await self.config.guild(guild).asked_qlist_questions.set(asked_qlist_questions)
+
+        embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
+        embed.set_footer(text="Try `!question ask` to submit your own questions")
+        await channel.send(embed=embed, view=SkipView(self))
+
 
 def setup(bot: Red):
     bot.add_cog(DailyQ(bot))
