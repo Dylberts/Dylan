@@ -257,7 +257,7 @@ class SkipButton(discord.ui.Button):
         await interaction.response.edit_message(view=self.view)
 
         if len(self.votes) >= skip_threshold:
-            #await interaction.followup.send("The question has been skipped. Asking a new question...", ephemeral=True)
+            await interaction.followup.send("The question has been skipped. Asking a new question...", ephemeral=True)
             await self.cog.skip_question(interaction.message)
 
 class SkipView(discord.ui.View):
