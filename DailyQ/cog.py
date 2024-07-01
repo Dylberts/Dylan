@@ -206,7 +206,7 @@ class DailyQ(commands.Cog):
                 await self.config.guild(guild).asked_qlist_questions.set(asked_qlist_questions)
 
                 embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
-                                embed.set_footer(text="Try `!question ask` to submit your own questions")
+                embed.set_footer(text="Try `!question ask` to submit your own questions")
                 view = SkipView(self)
                 message = await channel.send(embed=embed, view=view)
                 view.message = message  # Store the sent message in the view for later deletion
