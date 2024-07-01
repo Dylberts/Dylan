@@ -210,7 +210,7 @@ class DailyQ(commands.Cog):
                 available_qlist_questions = self.Qlist.questions
             question = random.choice(available_qlist_questions)
 
-                embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
+        embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
         embed.set_footer(text="Try `!question ask` to submit your own questions")
 
         view = SkipView(self)
