@@ -208,7 +208,7 @@ class DailyQ(commands.Cog):
                     asked_qlist_questions.append(question)
 
                 await self.config.guild(guild).member_questions.set(member_questions)
-                                await self.config.guild(guild).asked_member_questions.set(asked_member_questions)
+                await self.config.guild(guild).asked_member_questions.set(asked_member_questions)
                 await self.config.guild(guild).asked_qlist_questions.set(asked_qlist_questions)
 
                 embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
