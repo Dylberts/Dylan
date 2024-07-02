@@ -148,15 +148,8 @@ class DailyQ(commands.Cog):
     async def testq(self, ctx: Context):
         """Ask a test question immediately without affecting the daily question timer or queue."""
         guild_config = await self.config.guild(ctx.guild).all()
-        channel_id = guild_config["channel_id"]
         member_questions = guild_config["member_questions"]
-        asked_member_questions = guild_config["asked_member_questions"]
         asked_qlist_questions = guild_config["asked_qlist_questions"]
-        channel = self.bot.get_channel(channel_id) or self.bot.get_thread(channel_id)
-
-        if not channel_id or not channel:
-            await ctx.send("The daily question location is not set or cannot be found.", delete_after=15)
-            return
 
         if member_questions:
             question = random.choice(member_questions)
@@ -170,7 +163,7 @@ class DailyQ(commands.Cog):
 
         embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
         embed.set_footer(text="Try `!question ask` to submit your own questions")
-        await channel.send(embed=embed)
+        await ctx.send(embed=embed)
 
     @question.command()
     @checks.admin_or_permissions(manage_guild=True)
