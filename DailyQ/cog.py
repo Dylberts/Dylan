@@ -290,7 +290,7 @@ class DailyQ(commands.Cog):
                 await self.config.guild(guild).asked_qlist_questions.set(asked_qlist_questions)
 
                 embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
-                embed.set_footer(text="Try `!question ask` to submit your own questions")
+                embed.set_footer(text="Try `!q ask` to submit your own daily questions")
                 
                 # Send the embed with an interactive button for skipping
                 message = await channel.send(embed=embed, components=[[
@@ -373,7 +373,7 @@ class DailyQ(commands.Cog):
             await self.config.guild_from_id(guild_id).set(config)
 
             embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
-            embed.set_footer(text="Try `!question ask` to submit your own questions")
+            embed.set_footer(text="Try `!q ask` to submit your own daily questions")
             new_message = await channel.send(embed=embed, components=[[
                 discord.ui.Button(style=discord.ButtonStyle.grey, label="Skip Question", custom_id="skip_question")
             ]])
@@ -394,4 +394,3 @@ class DailyQ(commands.Cog):
 
 def setup(bot: Red):
     bot.add_cog(DailyQ(bot))
-
