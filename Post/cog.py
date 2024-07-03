@@ -87,6 +87,7 @@ class Post(commands.Cog):
             reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_type)
             if str(reaction.emoji) == '📝':
                 confirm_msg = await ctx.send(f"Please confirm your forum post as a simple message: {content}")
+                embed = None
             elif str(reaction.emoji) == '📜':
                 confirm_msg = await ctx.send("Please confirm your forum post as an embed:", embed=embed)
             await confirm_msg.add_reaction('✅')
@@ -98,14 +99,12 @@ class Post(commands.Cog):
             try:
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_confirm)
                 if str(reaction.emoji) == '✅':
-                    if confirm_msg.embeds:
-                        thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
+                    thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
+                    if embed:
                         await thread.send(embed=embed)
-                        await ctx.send(f"Thread created with embed in {thread.mention}!")
                     else:
-                        thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
                         await thread.send(content=content)
-                        await ctx.send(f"Thread created with message in {thread.mention}!")
+                    await ctx.send(f"Thread created in {thread.mention}!")
                 elif str(reaction.emoji) == '❌':
                     await ctx.send("Forum post canceled. You can retype the message to edit it.")
             except asyncio.TimeoutError:
