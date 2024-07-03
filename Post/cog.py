@@ -48,8 +48,12 @@ class Post(commands.Cog):
             return
 
         # Send the content to the created thread
-        await thread.send(content)
-        await ctx.send(f"Thread created in {thread.mention}!")
+        try:
+            await thread.send(content)
+            await ctx.send(f"Thread created in {thread.mention}!")
+        except discord.HTTPException as e:
+            await ctx.send(f"Failed to send message to thread: {e}")
+            return
 
 async def setup(bot):
     bot.add_cog(Post(bot))
