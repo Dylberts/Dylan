@@ -106,11 +106,11 @@ class Post(commands.Cog):
             try:
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_confirm)
                 if str(reaction.emoji) == '✅':
-                    if str(type_msg.reactions[0].emoji) == '📝':
+                    if str(reaction.emoji) == '📝':
                         thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
                         await thread.send(content=content)
                         await ctx.send(f"Thread created with message in {thread.mention}!", delete_after=10)
-                    elif str(type_msg.reactions[1].emoji) == '📜':
+                    elif str(reaction.emoji) == '📜':
                         thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
                         await thread.send(embed=embed)
                         await ctx.send(f"Thread created with embed in {thread.mention}!", delete_after=10)
