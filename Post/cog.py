@@ -45,5 +45,5 @@ class Post(commands.Cog):
         await thread.send(content=content)
         await ctx.send(f"Thread created in {thread.mention}!")
 
-def setup(bot):
-    bot.add_cog(Post(bot))
+async def setup(bot):
+    await bot.add_cog(Post(bot))
