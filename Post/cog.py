@@ -107,10 +107,10 @@ class Post(commands.Cog):
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_confirm)
                 if str(reaction.emoji) == '✅':
                     if str(reaction.emoji) == '📝':
-                        thread = await forum_channel.create_thread(name=title, type=discord.ChannelType.public_thread)
+                        thread = await forum_channel.create_thread(name=title, type=discord.ChannelType.public_thread, content=content)
                         await thread.send(content=content)
                         await ctx.send(f"Post created in thread {thread.name}!", delete_after=10)
-                    elif str(reaction.emoji) == '📜':
+                                        elif str(reaction.emoji) == '📜':
                         thread = await forum_channel.create_thread(name=title, type=discord.ChannelType.public_thread)
                         await thread.send(embed=embed)
                         await ctx.send(f"Post created in thread {thread.name}!", delete_after=10)
