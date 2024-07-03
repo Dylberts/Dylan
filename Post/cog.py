@@ -1,6 +1,5 @@
 import discord
-from discord.ext import commands
-from redbot.core import Config, checks
+from redbot.core import commands, Config, checks
 
 class Post(commands.Cog):
     def __init__(self, bot):
@@ -42,8 +41,8 @@ class Post(commands.Cog):
             return
 
         thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
-        await thread.send(content=content)
+        await thread.send(content)
         await ctx.send(f"Thread created in {thread.mention}!")
 
 async def setup(bot):
-    await bot.add_cog(Post(bot))
+    bot.add_cog(Post(bot))
