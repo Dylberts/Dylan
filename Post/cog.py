@@ -71,47 +71,50 @@ class Post(commands.Cog):
             await ctx.send("Forum channel not found.")
             return
 
-        embed = discord.Embed(description=content, color=0x6EDFBA)
-        type_msg = await ctx.send(
-            "How would you like to post your message?\n\n"
-            "React with 📝 for a simple message.\n"
-            "React with 📜 for an embed."
-        )
-        await type_msg.add_reaction('📝')
-        await type_msg.add_reaction('📜')
+        if content:
+            embed = discord.Embed(description=content, color=0x6EDFBA)
+            type_msg = await ctx.send(
+                "How would you like to post your message?\n\n"
+                "React with 📝 for a simple message.\n"
+                "React with 📜 for an embed."
+            )
+            await type_msg.add_reaction('📝')
+            await type_msg.add_reaction('📜')
 
-        def check_type(reaction, user):
-            return user == ctx.author and str(reaction.emoji) in ['📝', '📜']
-
-        try:
-            reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_type)
-            if str(reaction.emoji) == '📝':
-                confirm_msg = await ctx.send(f"Please confirm your forum post as a simple message: {content}")
-                embed = None
-            elif str(reaction.emoji) == '📜':
-                confirm_msg = await ctx.send("Please confirm your forum post as an embed:", embed=embed)
-            await confirm_msg.add_reaction('✅')
-            await confirm_msg.add_reaction('❌')
-
-            def check_confirm(reaction, user):
-                return user == ctx.author and str(reaction.emoji) in ['✅', '❌']
+            def check_type(reaction, user):
+                return user == ctx.author and str(reaction.emoji) in ['📝', '📜']
 
             try:
-                reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_confirm)
-                if str(reaction.emoji) == '✅':
-                    thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
-                    if embed:
-                        await thread.send(embed=embed)
-                    else:
-                        await thread.send(content=content)
-                    await ctx.send(f"Thread created in {thread.mention}!")
-                elif str(reaction.emoji) == '❌':
-                    await ctx.send("Forum post canceled. You can retype the message to edit it.")
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_type)
+                if str(reaction.emoji) == '📝':
+                    confirm_msg = await ctx.send(f"Please confirm your forum post as a simple message: {content}")
+                    embed = None
+                elif str(reaction.emoji) == '📜':
+                    confirm_msg = await ctx.send("Please confirm your forum post as an embed:", embed=embed)
+                await confirm_msg.add_reaction('✅')
+                await confirm_msg.add_reaction('❌')
+
+                def check_confirm(reaction, user):
+                    return user == ctx.author and str(reaction.emoji) in ['✅', '❌']
+
+                try:
+                    reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_confirm)
+                    if str(reaction.emoji) == '✅':
+                        thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
+                        if embed:
+                            await thread.send(embed=embed)
+                        else:
+                            await thread.send(content=content)
+                        await ctx.send(f"Thread created in {thread.mention}!")
+                    elif str(reaction.emoji) == '❌':
+                        await ctx.send("Forum post canceled. You can retype the message to edit it.")
+                except asyncio.TimeoutError:
+                    await ctx.send("You took too long to respond. Forum post canceled.")
+
             except asyncio.TimeoutError:
                 await ctx.send("You took too long to respond. Forum post canceled.")
-
-        except asyncio.TimeoutError:
-            await ctx.send("You took too long to respond. Forum post canceled.")
+        else:
+            await ctx.send("Content cannot be empty.")
 
 def setup(bot):
     bot.add_cog(Post(bot))
