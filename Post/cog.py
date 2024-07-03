@@ -27,7 +27,7 @@ class Post(commands.Cog):
         await msg.delete(delay=10)
 
     @post.command()
-    async def say(self, ctx, *, message: str):
+    async def msg(self, ctx, *, message: str):
         """Make a post"""
         channel_id = await self.config.guild(ctx.guild).post_channel()
         if not channel_id:
@@ -65,23 +65,17 @@ class Post(commands.Cog):
         await msg.delete(delay=10)
 
     @post.command()
-    async def forumpost(self, ctx, thread_id: int, title: str, *, content: str = ""):
-        """Create a post in an existing forum thread"""
+    async def forum(self, ctx, title: str, *, content: str = ""):
+        """Create a new thread in the forum channel"""
         channel_id = await self.config.guild(ctx.guild).forum_channel()
         if not channel_id:
             msg = await ctx.send("Forum channel not set. Use `post setforum` to set it.")
             await msg.delete(delay=10)
             return
-        
+
         forum_channel = self.bot.get_channel(channel_id)
         if not forum_channel:
             msg = await ctx.send("Forum channel not found.")
-            await msg.delete(delay=10)
-            return
-
-        thread = discord.utils.get(forum_channel.threads, id=thread_id)
-        if not thread:
-            msg = await ctx.send("Thread not found.")
             await msg.delete(delay=10)
             return
 
@@ -96,7 +90,7 @@ class Post(commands.Cog):
         try:
             reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
             if str(reaction.emoji) == '✅':
-                await thread.create_post(title=title, content=content)
+                thread = await forum_channel.create_thread(name=title, content=content, embed=embed)
                 await ctx.send(f"Post created in thread {thread.name}!", delete_after=10)
             elif str(reaction.emoji) == '❌':
                 await ctx.send("Forum post canceled. You can retype the message to edit it.", delete_after=10)
