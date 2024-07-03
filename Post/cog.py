@@ -24,7 +24,7 @@ class Post(commands.Cog):
         await ctx.send(f"Forum channel set to {channel.mention}")
 
     @post.command()
-    async def forum(self, ctx, title: str, *, content: str):
+    async def forum(self, ctx, title: str, *, description: str):
         """Create a new thread in the forum channel"""
         channel_id = await self.config.guild(ctx.guild).forum_channel()
         if not channel_id:
@@ -36,8 +36,8 @@ class Post(commands.Cog):
             await ctx.send("Forum channel not found.")
             return
 
-        if not content:
-            await ctx.send("Content cannot be empty.")
+        if not description:
+            await ctx.send("Description cannot be empty.")
             return
 
         # Create the thread with the provided title
@@ -47,9 +47,9 @@ class Post(commands.Cog):
             await ctx.send(f"Failed to create thread: {e}")
             return
 
-        # Send the content to the created thread
+        # Send the description to the created thread
         try:
-            await thread.send(content)
+            await thread.send(description)
             await ctx.send(f"Thread created in {thread.mention}!")
         except discord.HTTPException as e:
             await ctx.send(f"Failed to send message to thread: {e}")
