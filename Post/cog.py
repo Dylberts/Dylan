@@ -79,7 +79,7 @@ class Post(commands.Cog):
             await msg.delete(delay=10)
             return
 
-        embed = discord.Embed(title=title, description=content, color=0x6EDFBA)
+        embed = discord.Embed(description=content, color=0x6EDFBA)
         type_msg = await ctx.send(
             "How would you like to post your message?\n\n"
             "React with 📝 for a simple message.\n"
@@ -107,12 +107,12 @@ class Post(commands.Cog):
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_confirm)
                 if str(reaction.emoji) == '✅':
                     thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
-                    if str(reaction.emoji) == '📝':
-                        await thread.send(content=content)
-                        await ctx.send(f"Thread created with message in {thread.mention}!", delete_after=10)
-                    elif str(reaction.emoji) == '📜':
+                    if str(confirm_msg.embeds[0].description) == content:
                         await thread.send(embed=embed)
                         await ctx.send(f"Thread created with embed in {thread.mention}!", delete_after=10)
+                    else:
+                        await thread.send(content=content)
+                        await ctx.send(f"Thread created with message in {thread.mention}!", delete_after=10)
                 elif str(reaction.emoji) == '❌':
                     await ctx.send("Forum post canceled. You can retype the message to edit it.", delete_after=10)
             except asyncio.TimeoutError:
