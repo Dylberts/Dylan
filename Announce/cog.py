@@ -2,7 +2,7 @@ import asyncio
 import discord
 from redbot.core import commands, Config, checks
 
-class Announce(commands.Cog):
+class Post(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
@@ -15,7 +15,7 @@ class Announce(commands.Cog):
     @commands.group()
     @commands.guild_only()
     @checks.admin_or_permissions(manage_guild=True)
-    async def announce(self, ctx):
+    async def post(self, ctx):
         """Announcement commands"""
         pass
 
@@ -107,4 +107,4 @@ class Announce(commands.Cog):
         await ctx.message.delete()
 
 def setup(bot):
-    bot.add_cog(Announce(bot))
+    bot.add_cog(Post(bot))
