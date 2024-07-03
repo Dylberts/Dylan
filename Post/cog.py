@@ -94,7 +94,7 @@ class Post(commands.Cog):
         try:
             reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_type)
             if str(reaction.emoji) == '📝':
-                confirm_msg = await ctx.send("Please confirm your forum post as a simple message:", content=content)
+                confirm_msg = await ctx.send(f"Please confirm your forum post as a simple message: {content}")
             elif str(reaction.emoji) == '📜':
                 confirm_msg = await ctx.send("Please confirm your forum post as an embed:", embed=embed)
             await confirm_msg.add_reaction('✅')
