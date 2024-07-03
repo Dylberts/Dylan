@@ -43,7 +43,7 @@ class Post(commands.Cog):
         # Create the thread with the provided title and description
         try:
             thread = await forum_channel.create_thread(name=title, content=description, auto_archive_duration=1440)
-            await ctx.send(f"Thread created in {thread.mention}!")
+            await ctx.send(f"Thread created! [Jump to thread]({thread.jump_url})")
         except discord.HTTPException as e:
             await ctx.send(f"Failed to create thread: {e}")
 
