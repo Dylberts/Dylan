@@ -1,5 +1,5 @@
-import discord
 from redbot.core import commands, Config, checks
+import discord
 
 class Post(commands.Cog):
     def __init__(self, bot):
@@ -31,7 +31,7 @@ class Post(commands.Cog):
             await ctx.send("Forum channel not set. Use `post setforum` to set it.")
             return
 
-        forum_channel = self.bot.get_channel(channel_id)
+        forum_channel = ctx.guild.get_channel(channel_id)
         if not forum_channel:
             await ctx.send("Forum channel not found.")
             return
@@ -41,8 +41,12 @@ class Post(commands.Cog):
             return
 
         # Create the thread with the provided title
-        thread = await forum_channel.create_thread(name=title, type=discord.ChannelType.public_thread, auto_archive_duration=1440)
-        
+        try:
+            thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
+        except discord.HTTPException as e:
+            await ctx.send(f"Failed to create thread: {e}")
+            return
+
         # Send the content to the created thread
         await thread.send(content)
         await ctx.send(f"Thread created in {thread.mention}!")
