@@ -40,7 +40,10 @@ class Post(commands.Cog):
             await ctx.send("Content cannot be empty.")
             return
 
-        thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
+        # Create the thread with the provided title
+        thread = await forum_channel.create_thread(name=title, type=discord.ChannelType.public_thread, auto_archive_duration=1440)
+        
+        # Send the content to the created thread
         await thread.send(content)
         await ctx.send(f"Thread created in {thread.mention}!")
 
