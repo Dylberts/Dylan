@@ -119,7 +119,6 @@ class Post(commands.Cog):
             except asyncio.TimeoutError:
                 await ctx.send("You took too long to respond. Forum post canceled.", delete_after=10)
 
-            await confirm_msg.delete()
         except asyncio.TimeoutError:
             await ctx.send("You took too long to respond. Forum post canceled.", delete_after=10)
 
