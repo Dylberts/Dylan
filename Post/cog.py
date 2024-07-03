@@ -80,24 +80,48 @@ class Post(commands.Cog):
             return
 
         embed = discord.Embed(title=title, description=content, color=0x6EDFBA)
-        confirm_msg = await ctx.send("Please confirm your forum post:", embed=embed)
-        await confirm_msg.add_reaction('✅')
-        await confirm_msg.add_reaction('❌')
+        type_msg = await ctx.send(
+            "How would you like to post your message?\n\n"
+            "React with 📝 for a simple message.\n"
+            "React with 📜 for an embed."
+        )
+        await type_msg.add_reaction('📝')
+        await type_msg.add_reaction('📜')
 
-        def check(reaction, user):
-            return user == ctx.author and str(reaction.emoji) in ['✅', '❌']
+        def check_type(reaction, user):
+            return user == ctx.author and str(reaction.emoji) in ['📝', '📜']
 
         try:
-            reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check)
-            if str(reaction.emoji) == '✅':
-                thread = await forum_channel.create_thread(name=title, content=content, embed=embed)
-                await ctx.send(f"Post created in thread {thread.name}!", delete_after=10)
-            elif str(reaction.emoji) == '❌':
-                await ctx.send("Forum post canceled. You can retype the message to edit it.", delete_after=10)
+            reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_type)
+            if str(reaction.emoji) == '📝':
+                confirm_msg = await ctx.send("Please confirm your forum post:", content=content)
+            elif str(reaction.emoji) == '📜':
+                confirm_msg = await ctx.send("Please confirm your forum post:", embed=embed)
+            await confirm_msg.add_reaction('✅')
+            await confirm_msg.add_reaction('❌')
+
+            def check_confirm(reaction, user):
+                return user == ctx.author and str(reaction.emoji) in ['✅', '❌']
+
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_confirm)
+                if str(reaction.emoji) == '✅':
+                    if str(reaction.emoji) == '📝':
+                        thread = await forum_channel.create_thread(name=title, content=content)
+                        await ctx.send(f"Post created in thread {thread.id}!", delete_after=10)
+                    elif str(reaction.emoji) == '📜':
+                        thread = await forum_channel.create_thread(name=title, embed=embed)
+                        await ctx.send(f"Post created in thread {thread.id}!", delete_after=10)
+                elif str(reaction.emoji) == '❌':
+                    await ctx.send("Forum post canceled. You can retype the message to edit it.", delete_after=10)
+            except asyncio.TimeoutError:
+                await ctx.send("You took too long to respond. Forum post canceled.", delete_after=10)
+            
+            await confirm_msg.delete()
         except asyncio.TimeoutError:
             await ctx.send("You took too long to respond. Forum post canceled.", delete_after=10)
 
-        await confirm_msg.delete()
+        await type_msg.delete()
         await ctx.message.delete()
 
 def setup(bot):
