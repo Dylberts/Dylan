@@ -40,20 +40,13 @@ class Post(commands.Cog):
             await ctx.send("Description cannot be empty.")
             return
 
-        # Create the thread with the provided title
+        # Create the thread with the provided title and description
         try:
             thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
-        except discord.HTTPException as e:
-            await ctx.send(f"Failed to create thread: {e}")
-            return
-
-        # Send the description to the created thread
-        try:
             await thread.send(description)
             await ctx.send(f"Thread created in {thread.mention}!")
         except discord.HTTPException as e:
-            await ctx.send(f"Failed to send message to thread: {e}")
-            return
+            await ctx.send(f"Failed to create thread: {e}")
 
 async def setup(bot):
     bot.add_cog(Post(bot))
