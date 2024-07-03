@@ -44,10 +44,7 @@ class Post(commands.Cog):
         # Create the thread with the provided title and description
         try:
             thread = await forum_channel.create_thread(name=title, content=description, auto_archive_duration=1440)
-            thread_url = f"https://discord.com/channels/{ctx.guild.id}/{thread.id}"
-            await ctx.send(f"Thread created! [Jump to thread]({thread_url})")
-        except discord.HTTPException as e:
-            await ctx.send(f"Failed to create thread: {e}")
-
+            await ctx.send(f"Forum thread post has been created!")
+            
 async def setup(bot):
     bot.add_cog(Post(bot))
