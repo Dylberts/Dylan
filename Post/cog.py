@@ -42,7 +42,12 @@ class Post(commands.Cog):
 
         # Create the thread with the provided title and description
         thread = await forum_channel.create_thread(name=title, content=description, auto_archive_duration=1440)
-        await ctx.send(f"Forum thread post has been created! [Click here to view it](https://discord.com/channels/{ctx.guild.id}/{forum_channel.id}/{thread.id})")
+        embed = discord.Embed(
+            title="Forum Thread Created",
+            description=f"[Click here to view it](https://discord.com/channels/{ctx.guild.id}/{forum_channel.id}/{thread.id})",
+            color=0x6EDFBA
+        )
+        await ctx.send(embed=embed)
 
 async def setup(bot):
     bot.add_cog(Post(bot))
