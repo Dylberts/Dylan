@@ -107,13 +107,12 @@ class Post(commands.Cog):
                 reaction, user = await self.bot.wait_for('reaction_add', timeout=60.0, check=check_confirm)
                 if str(reaction.emoji) == '✅':
                     if str(reaction.emoji) == '📝':
-                        thread = await forum_channel.create_thread(name=title, type=discord.ChannelType.public_thread, auto_archive_duration=1440)
-                        await thread.send(content=content)
-                        await ctx.send(f"Thread created with message in {thread.name}!", delete_after=10)
+                        thread = await forum_channel.create_thread(name=title, content=content, auto_archive_duration=1440)
+                        await ctx.send(f"Thread created with message in {thread.mention}!", delete_after=10)
                     elif str(reaction.emoji) == '📜':
-                        thread = await forum_channel.create_thread(name=title, type=discord.ChannelType.public_thread, auto_archive_duration=1440)
+                        thread = await forum_channel.create_thread(name=title, auto_archive_duration=1440)
                         await thread.send(embed=embed)
-                        await ctx.send(f"Thread created with embed in {thread.name}!", delete_after=10)
+                        await ctx.send(f"Thread created with embed in {thread.mention}!", delete_after=10)
                 elif str(reaction.emoji) == '❌':
                     await ctx.send("Forum post canceled. You can retype the message to edit it.", delete_after=10)
             except asyncio.TimeoutError:
