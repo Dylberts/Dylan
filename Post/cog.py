@@ -1,6 +1,5 @@
 from redbot.core import commands, Config, checks
 import discord
-from discord.utils import oauth_url
 
 class Post(commands.Cog):
     def __init__(self, bot):
@@ -43,8 +42,10 @@ class Post(commands.Cog):
 
         # Create the thread with the provided title and description
         try:
-            thread = await forum_channel.create_thread(name=title, content=description, auto_archive_duration=1440)
-            await ctx.send(f"Forum thread post has been created!")
+            thread = await forum_channel.create_thread(name=title, message=description, auto_archive_duration=1440)
+            await ctx.send(f"Forum thread post has been created! [Link to thread](https://discord.com/channels/{ctx.guild.id}/{forum_channel.id}/{thread.id})")
+        except discord.HTTPException as e:
+            await ctx.send(f"Failed to create thread: {e}")
             
 async def setup(bot):
     bot.add_cog(Post(bot))
