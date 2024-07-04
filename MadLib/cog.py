@@ -1,9 +1,10 @@
-# madlib.py
+# cog.py
 import discord
 from redbot.core import commands
 from redbot.core.utils.chat_formatting import bold
 import random
-from madlibs import MADLIBS
+
+from .madlibs import MADLIBS
 
 class MadLib(commands.Cog):
     """MadLibs game for Discord"""
@@ -24,7 +25,8 @@ class MadLib(commands.Cog):
             "template": template["template"],
             "placeholders": template["placeholders"],
             "title": template["title"],
-            "responses": []
+            "responses": [],
+            "channel": ctx.channel
         }
 
         await ctx.send(f"Starting a new MadLib: {bold(template['title'])}")
@@ -35,7 +37,7 @@ class MadLib(commands.Cog):
         if not self.current_game or message.author.bot:
             return
 
-        if message.channel == self.current_game.get('channel'):
+        if message.channel == self.current_game['channel']:
             placeholder = self.current_game["placeholders"].pop(0)
             self.current_game["responses"].append(message.content)
 
