@@ -1,10 +1,9 @@
-# cog.py
 import discord
 from redbot.core import commands
 from redbot.core.utils.chat_formatting import bold
 import random
 
-from .madlibs import MADLIBS
+from .madlibs import MADLIBS  
 
 class MadLib(commands.Cog):
     """MadLibs game for Discord"""
