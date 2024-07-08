@@ -196,7 +196,7 @@ class DailyQ(commands.Cog):
         user_id = str(ctx.author.id)
         submissions = guild_config["submissions"]
 
-                if user_id not in submissions or submissions[user_id] == 0:
+        if user_id not in submissions or submissions[user_id] == 0:
             await ctx.send("You haven't submitted any questions yet.", delete_after=15)
             return
 
