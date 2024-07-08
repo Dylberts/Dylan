@@ -4,7 +4,7 @@ import asyncio
 from redbot.core import commands, Config, checks
 from redbot.core.bot import Red
 from redbot.core.commands import Context
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import importlib.util
 import os
 
@@ -23,11 +23,12 @@ class DailyQ(commands.Cog):
             "last_reset": None,  # Track the last reset time
             "asked_qlist_questions": [],  # Track asked Qlist questions
             "skip_threshold": 4,  # Default skip threshold
-            "current_question_message_id": None  # Store the current question message ID
+            "current_question_message_id": None,  # Store the current question message ID
+            "start_time": "00:00"  # Default start time for daily question
         }
         self.config.register_guild(**default_guild)
         self.just_loaded = True  # Add a flag to check if the cog was just loaded
-        self.ask_question_task = self.bot.loop.create_task(self.ask_question_task())
+        self.ask_question_loop_task = self.bot.loop.create_task(self.ask_question_loop())
         self.reset_submissions_task = self.bot.loop.create_task(self.reset_submissions_task())
 
         # Load Qlist.py from the DailyQ folder
@@ -38,7 +39,7 @@ class DailyQ(commands.Cog):
         spec.loader.exec_module(self.Qlist)
 
     def cog_unload(self):
-        self.ask_question_task.cancel()
+        self.ask_question_loop_task.cancel()
         self.reset_submissions_task.cancel()
 
     @commands.group(aliases=['q'])
@@ -139,8 +140,8 @@ class DailyQ(commands.Cog):
             return
         
         await self.config.guild(ctx.guild).frequency.set(hours)
-        self.ask_question_task.cancel()
-        self.ask_question_task = self.bot.loop.create_task(self.ask_question_task())
+        self.ask_question_loop_task.cancel()
+        self.ask_question_loop_task = self.bot.loop.create_task(self.ask_question_loop())
         await ctx.send(f"The question frequency has been set to every {hours} hours.", delete_after=15)
 
     @question.command()
@@ -195,202 +196,103 @@ class DailyQ(commands.Cog):
         user_id = str(ctx.author.id)
         submissions = guild_config["submissions"]
 
-        if user_id not in submissions:
-            await ctx.send("You haven't submitted any questions yet.", ephemeral=True)
+                if user_id not in submissions or submissions[user_id] == 0:
+            await ctx.send("You haven't submitted any questions yet.", delete_after=15)
             return
 
         member_questions = guild_config["member_questions"]
-        user_questions = [q for q in member_questions if q["user_id"] == user_id]
+        user_questions = [q for q in member_questions if q.startswith(f"[{ctx.author.id}] ")]
 
         if not user_questions:
-            await ctx.send("You don't have any questions in the queue.", ephemeral=True)
+            await ctx.send("You haven't submitted any questions yet.", delete_after=15)
             return
 
-        questions_list = "\n".join([f"{idx + 1}. {question['text']}" for idx, question in enumerate(user_questions)])
-        await ctx.send(f"**Your Submitted Questions:**\n{questions_list}", ephemeral=True)
-
-    @question.command()
-    async def editquestion(self, ctx: Context, index: int, *, new_question: str):
-        """Edit your submitted question by index."""
-        guild_config = await self.config.guild(ctx.guild).all()
-        user_id = str(ctx.author.id)
-        submissions = guild_config["submissions"]
-
-        if user_id not in submissions:
-            await ctx.send("You haven't submitted any questions yet.", ephemeral=True)
-            return
-
-        async with self.config.guild(ctx.guild).member_questions() as member_questions:
-            user_questions = [q for q in member_questions if q["user_id"] == user_id]
-
-            if 0 < index <= len(user_questions):
-                question_to_edit = user_questions[index - 1]
-                question_to_edit["text"] = new_question
-                await ctx.send(f"Your question has been edited to: {new_question}", ephemeral=True)
-            else:
-                await ctx.send("Invalid index provided.", ephemeral=True)
-
-    @question.command()
-    async def deletequestion(self, ctx: Context, index: int):
-        """Delete your submitted question by index."""
-        guild_config = await self.config.guild(ctx.guild).all()
-        user_id = str(ctx.author.id)
-        submissions = guild_config["submissions"]
-
-        if user_id not in submissions:
-            await ctx.send("You haven't submitted any questions yet.", ephemeral=True)
-            return
-
-        async with self.config.guild(ctx.guild).member_questions() as member_questions:
-            user_questions = [q for q in member_questions if q["user_id"] == user_id]
-
-            if 0 < index <= len(user_questions):
-                removed_question = user_questions.pop(index - 1)
-                await ctx.send(f"Removed your question: {removed_question['text']}", ephemeral=True)
-            else:
-                await ctx.send("Invalid index provided.", ephemeral=True)
-
-    async def ask_question_task(self):
-        while True:
-            await self.bot.wait_until_ready()
-            if self.just_loaded:  # Skip asking a question if the cog was just loaded
-                self.just_loaded = False
-                await asyncio.sleep(10)  # Give some time before checking again
-                continue
-
-            for guild in self.bot.guilds:
-                config = await self.config.guild(guild).all()
-                channel_id = config["channel_id"]
-                member_questions = config["member_questions"]
-                asked_member_questions = config["asked_member_questions"]
-                asked_qlist_questions = config["asked_qlist_questions"]
-
-                if not channel_id:
-                    continue
-
-                channel = self.bot.get_channel(channel_id) or self.bot.get_thread(channel_id)
-                if not channel:
-                    continue
-
-                if member_questions:
-                    question = random.choice(member_questions)
-                    member_questions.remove(question)
-                    asked_member_questions.append(question)
-                else:
-                    available_qlist_questions = [q for q in self.Qlist.questions if q not in asked_qlist_questions]
-                    if not available_qlist_questions:
-                        # Reset asked_qlist_questions if all have been asked
-                        asked_qlist_questions = []
-                        available_qlist_questions = self.Qlist.questions
-                    question = random.choice(available_qlist_questions)
-                    asked_qlist_questions.append(question)
-
-                await self.config.guild(guild).member_questions.set(member_questions)
-                await self.config.guild(guild).asked_member_questions.set(asked_member_questions)
-                await self.config.guild(guild).asked_qlist_questions.set(asked_qlist_questions)
-
-                embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
-                embed.set_footer(text="Try `!q ask` to submit your own daily questions")
-                
-                # Send the embed with an interactive button for skipping
-                message = await channel.send(embed=embed, components=[[
-                    discord.ui.Button(style=discord.ButtonStyle.grey, label="Skip Question", custom_id="skip_question")
-                ]])
-
-                await self.config.guild(guild).current_question_message_id.set(message.id)
-                await self.config.guild(guild).skip_votes.set({})
-
-            frequency = (await self.config.guild(guild).frequency()) * 3600  # Convert hours to seconds
-            await asyncio.sleep(frequency)
-
-    async def reset_submissions_task(self):
-        while True:
-            await self.bot.wait_until_ready()
-            now = datetime.utcnow()
-            for guild in self.bot.guilds:
-                guild_config = await self.config.guild(guild).all()
-                last_reset = guild_config["last_reset"]
-
-                if not last_reset or (now - datetime.fromisoformat(last_reset)) > timedelta(days=1):
-                    await self.config.guild(guild).submissions.set({})
-                    await self.config.guild(guild).last_reset.set(now.isoformat())
-            await asyncio.sleep(24 * 60 * 60)
-
-    @commands.Cog.listener()
-    async def on_button_click(self, interaction: discord.Interaction):
-        if interaction.custom_id != "skip_question":
-            return
-
-        guild_id = interaction.guild_id
-        user_id = str(interaction.user.id)
-
-        config = await self.config.guild_from_id(guild_id).all()
-        skip_votes = config.get("skip_votes", {})
-
-        if user_id in skip_votes:
-            await interaction.response.send_message("You have already voted to skip this question.", ephemeral=True)
-            return
-
-        skip_votes[user_id] = True
-        await self.config.guild_from_id(guild_id).skip_votes.set(skip_votes)
-
-        skip_threshold = config.get("skip_threshold", 4)
-        current_vote_count = len(skip_votes)
-
-        if current_vote_count < skip_threshold:
-            await interaction.response.edit_message(
-                components=[[
-                    discord.ui.Button(
-                        style=discord.ButtonStyle.grey,
-                        label=f"Skip Question ({current_vote_count})",
-                        custom_id="skip_question"
-                    )
-                ]]
-            )
-        else:
-            current_question_message_id = config["current_question_message_id"]
-            channel_id = config["channel_id"]
-            channel = self.bot.get_channel(channel_id) or self.bot.get_thread(channel_id)
-            if channel and current_question_message_id:
-                try:
-                    message = await channel.fetch_message(current_question_message_id)
-                    await message.delete()
-                except discord.NotFound:
-                    pass
-
-            if config["member_questions"]:
-                question = random.choice(config["member_questions"])
-                config["member_questions"].remove(question)
-                config["asked_member_questions"].append(question)
-            else:
-                available_qlist_questions = [q for q in self.Qlist.questions if q not in config["asked_qlist_questions"]]
-                if not available_qlist_questions:
-                    config["asked_qlist_questions"] = []
-                    available_qlist_questions = self.Qlist.questions
-                question = random.choice(available_qlist_questions)
-                config["asked_qlist_questions"].append(question)
-
-            await self.config.guild_from_id(guild_id).set(config)
-
-            embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
-            embed.set_footer(text="Try `!q ask` to submit your own daily questions")
-            new_message = await channel.send(embed=embed, components=[[
-                discord.ui.Button(style=discord.ButtonStyle.grey, label="Skip Question", custom_id="skip_question")
-            ]])
-
-            await self.config.guild_from_id(guild_id).current_question_message_id.set(new_message.id)
-            await self.config.guild_from_id(guild_id).skip_votes.set({})
+        questions_list = "\n".join([f"{idx + 1}. {q[len(f'[{ctx.author.id}] '):]}" for idx, q in enumerate(user_questions)])
+        await ctx.send(f"**Your Submitted Questions:**\n{questions_list}", delete_after=30)
 
     @question.command()
     @checks.admin_or_permissions(manage_guild=True)
-    async def setskip(self, ctx: Context, skip_count: int):
-        """Set the number of votes required to skip a question."""
-        if skip_count < 1:
-            await ctx.send("Skip count must be at least 1.", delete_after=15)
+    async def starttime(self, ctx: Context, start_time: str):
+        """Set the start time for the daily question in HH:MM (24-hour) format."""
+        try:
+            time.fromisoformat(start_time)
+        except ValueError:
+            await ctx.send("Invalid time format. Please use HH:MM (24-hour) format.", delete_after=15)
             return
         
-        await self.config.guild(ctx.guild).skip_threshold.set(skip_count)
-        await ctx.send(f"The skip threshold has been set to {skip_count} votes.", delete_after=15)
+        await self.config.guild(ctx.guild).start_time.set(start_time)
+        self.ask_question_loop_task.cancel()
+        self.ask_question_loop_task = self.bot.loop.create_task(self.ask_question_loop())
+        await ctx.send(f"The start time for the daily question has been set to {start_time}.", delete_after=15)
+
+    async def ask_question_loop(self):
+        await self.bot.wait_until_ready()
+        guilds = await self.config.all_guilds()
+
+        while True:
+            for guild_id, guild_config in guilds.items():
+                guild = self.bot.get_guild(guild_id)
+                if not guild:
+                    continue
+
+                channel_id = guild_config["channel_id"]
+                start_time = guild_config.get("start_time", "00:00")
+                frequency = guild_config.get("frequency", 24)
+                current_question_message_id = guild_config.get("current_question_message_id")
+
+                now = datetime.utcnow()
+                target_time = datetime.combine(now.date(), time.fromisoformat(start_time))
+                if now < target_time:
+                    wait_time = (target_time - now).total_seconds()
+                else:
+                    next_target_time = target_time + timedelta(hours=frequency)
+                    wait_time = (next_target_time - now).total_seconds()
+
+                await asyncio.sleep(wait_time)
+
+                channel = guild.get_channel(channel_id)
+                if not channel:
+                    continue
+
+                member_questions = guild_config["member_questions"]
+                asked_qlist_questions = guild_config["asked_qlist_questions"]
+
+                if member_questions:
+                    question = random.choice(member_questions)
+                else:
+                    available_qlist_questions = [q for q in self.Qlist.questions if q not in asked_qlist_questions]
+                    if not available_qlist_questions:
+                        asked_qlist_questions = []
+                        available_qlist_questions = self.Qlist.questions
+                    question = random.choice(available_qlist_questions)
+
+                embed = discord.Embed(title="**DAILY QUESTION 💬**", description=f"> *{question}*\n\n", color=0x6EDFBA)
+                embed.set_footer(text="Try `!question ask` to submit your own questions")
+
+                if current_question_message_id:
+                    try:
+                        message = await channel.fetch_message(current_question_message_id)
+                        await message.edit(embed=embed)
+                    except discord.NotFound:
+                        message = await channel.send(embed)
+                else:
+                    message = await channel.send(embed=embed)
+
+                await self.config.guild(guild).current_question_message_id.set(message.id)
+
+            await asyncio.sleep(3600)  # Check every hour to see if it's time to ask the question
+
+    async def reset_submissions_task(self):
+        await self.bot.wait_until_ready()
+        while True:
+            now = datetime.utcnow()
+            for guild_id, guild_config in (await self.config.all_guilds()).items():
+                last_reset = guild_config.get("last_reset")
+                if not last_reset or now - datetime.fromisoformat(last_reset) > timedelta(days=1):
+                    await self.config.guild_from_id(guild_id).submissions.set({})
+                    await self.config.guild_from_id(guild_id).last_reset.set(now.isoformat())
+
+            await asyncio.sleep(86400)  # Reset submissions once a day
 
 def setup(bot: Red):
     bot.add_cog(DailyQ(bot))
