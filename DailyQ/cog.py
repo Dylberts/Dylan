@@ -184,6 +184,7 @@ class SkipVoteView(discord.ui.View):
     @discord.ui.button(label="Skip Vote: 0", style=discord.ButtonStyle.gray)
     async def skip_vote_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         user = interaction.user
+
         if user.id in self.skip_voters:
             await interaction.response.send_message("You have already voted to skip this question.", ephemeral=True)
             return
@@ -196,6 +197,7 @@ class SkipVoteView(discord.ui.View):
         if self.skip_votes >= await self.cog.config.guild(interaction.guild).skip_votes_required():
             self.skip_votes = 0
             self.skip_voters = set()
+            await interaction.response.send_message("Skipping the question...", ephemeral=True)
             await self.cog.ask_question(interaction.channel)
 
 def setup(bot: commands.Bot):
