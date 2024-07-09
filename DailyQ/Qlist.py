@@ -34,18 +34,29 @@ class Qlist:
             "If you could live anywhere in the world, where would it be?",
             "What's your favorite season and why?"
         ]
-        self.asked_questions = set()
+        self.asked_default_questions = set()
+        self.asked_user_questions = set()
         self.user_submitted_questions = []
 
     def get_random_question(self):
-        all_questions = self.user_submitted_questions + self.default_questions
-        available_questions = list(set(all_questions) - self.asked_questions)
-        if not available_questions:
-            self.asked_questions = set()
-            available_questions = all_questions
-        question = random.choice(available_questions)
-        self.asked_questions.add(question)
-        return question
+        all_questions = self.user_submitted_questions + [{"question": q} for q in self.default_questions]
+        available_default_questions = list(set(self.default_questions) - self.asked_default_questions)
+        available_user_questions = [q for q in self.user_submitted_questions if q not in self.asked_user_questions]
+
+        if not available_default_questions and not available_user_questions:
+            self.asked_default_questions = set()
+            self.asked_user_questions = set()
+            available_default_questions = self.default_questions
+            available_user_questions = self.user_submitted_questions
+
+        if available_user_questions:
+            question = random.choice(available_user_questions)
+            self.asked_user_questions.add(question)
+        else:
+            question = random.choice(available_default_questions)
+            self.asked_default_questions.add(question)
+
+        return question["question"] if isinstance(question, dict) else question
 
     def add_user_question(self, question):
         self.user_submitted_questions.append(question)
