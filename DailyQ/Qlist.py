@@ -1,107 +1,57 @@
-# Question will be asked from here if no member questions are queued to be asked
+import random
 
-questions = [
-    "If you could change one law, what would it be and why?",
-    "What is the most significant challenge humanity faces today?",
-    "Would you prefer a life of comfort or a life of adventure? Why?",
-    "Is it more important to be respected or liked? Explain your reasoning.",
-    "Do you believe that technology brings us closer together or pushes us further apart?",
-    "If you could have dinner with any historical figure, who would it be and what would you ask them?",
-    "What does success mean to you?",
-    "Can true happiness be achieved without suffering? Why or why not?",
-    "If you could live in any fictional world, which one would you choose and why?",
-    "Do you think people are inherently good or inherently selfish? Explain your view.",
-    "What role does luck play in achieving success?",
-    "If you had the chance to start your life over, would you do anything differently?",
-    "Is it better to follow your passion or to choose a stable career path?",
-    "What is the meaning of life, in your opinion?",
-    "If you could solve one global problem, what would it be?",
-    "How do you define love?",
-    "Is it more important to seek the truth or to avoid hurting someone's feelings?",
-    "Would you rather be able to fly or be invisible? Why?",
-    "Do you think animals have emotions similar to humans? Explain.",
-    "If you could instantly master any skill, what would it be?",
-    "Should we prioritize exploration of space or the preservation of our planet? Why?",
-    "What is the greatest book you’ve ever read and why did it impact you?",
-    "Is it better to have loved and lost than never to have loved at all?",
-    "Do you believe in fate or free will? Explain your perspective.",
-    "If you could communicate with one species of animal, which would it be and why?",
-    "What is more important: freedom or security? Can you have both?",
-    "Do you think we are alone in the universe? Why or why not?",
-    "How do you cope with failure?",
-    "If you could bring one fictional character to life, who would it be and why?",
-    "What is your stance on the existence of an afterlife?",
-    "If you could eliminate one emotion from the human experience, which would it be and why?",
-    "What do you think is the most beautiful thing in the world?",
-    "Would you rather lose all your memories or never be able to make new ones?",
-    "What do you think is the biggest misconception people have about you?",
-    "If you could spend a day in someone else’s shoes, whose would they be and why?",
-    "Do you believe in absolute morality, or is morality relative?",
-    "How would you describe your ideal society?",
-    "If you had the power to change one thing about the past, what would it be?",
-    "What motivates you to get out of bed every day?",
-    "What is one experience you think everyone should have in their lifetime?",
-    "If you could live forever, would you choose to? Why or why not?",
-    "How do you handle stress?",
-    "What is the most valuable lesson you’ve learned so far?",
-    "Is it better to be intelligent or wise? Explain your answer.",
-    "If you could only eat one food for the rest of your life, what would it be and why?",
-    "Do you believe money can buy happiness? Explain.",
-    "What is your opinion on the impact of social media on society?",
-    "If you had to choose between losing your sight or your hearing, which would it be?",
-    "Do you think it’s more important to save for the future or live in the moment?",
-    "What is the one thing you could not live without?",
-    "What does it mean to be truly free?",
-    "If you could meet your future self, what advice would you give them?",
-    "Do you think humans are the most intelligent species on Earth? Why or why not?",
-    "What is the best advice you’ve ever received?",
-    "Would you rather be famous or powerful? Explain your choice.",
-    "What do you think is the greatest invention of all time?",
-    "If you could switch lives with one person for a day, who would it be?",
-    "What do you think happens after we die?",
-    "Is it more important to be loved or to love others?",
-    "Do you think the ends justify the means? Explain.",
-    "If you could remove one habit from society, what would it be?",
-    "What do you believe is the key to happiness?",
-    "What are you most grateful for in your life?",
-    "Would you rather explore the deep sea or outer space?",
-    "Do you think education is a right or a privilege?",
-    "What is the most daring thing you’ve ever done?",
-    "If you could have any superpower, what would it be and why?",
-    "What is your biggest fear?",
-    "Do you think honesty is always the best policy? Why or why not?",
-    "If you could travel back in time, where and when would you go?",
-    "What do you think is the biggest threat to humanity?",
-    "If you could change one thing about yourself, what would it be?",
-    "What do you think is the most important quality in a leader?",
-    "What makes a person truly evil?",
-    "If you could be an expert in any field, which one would you choose and why?",
-    "What do you think is the most significant invention of the 21st century?",
-    "Do you believe in second chances? Explain.",
-    "What is the most beautiful place you’ve ever seen?",
-    "Would you rather be a master of one thing or good at many things?",
-    "Do you think people can change?",
-    "If you could have any job in the world, what would it be and why?",
-    "What is your proudest achievement?",
-    "Do you believe in life on other planets?",
-    "What does it mean to live a good life?",
-    "If you could learn the truth about any mystery, which one would you choose?",
-    "What is more important: wisdom or knowledge?",
-    "If you could invent something to make life easier, what would it be?",
-    "Do you think people should be judged by their actions or their intentions?",
-    "What do you think is the most important trait in a friend?",
-    "If you could change one thing about the world, what would it be?",
-    "Do you believe in karma?",
-    "What is your most treasured memory?",
-    "If you could speak any language fluently, which one would it be and why?",
-    "What do you think is the most important lesson to teach children?",
-    "Would you rather know the date of your death or the cause of your death?",
-    "What do you think is the greatest challenge facing future generations?",
-    "Do you believe in true love? Explain.",
-    "What does freedom mean to you?",
-    "What is your greatest strength?",
-    "What is your greatest weakness?",
-    "If you could create a new holiday, what would it be and how would people celebrate it?",
-    "What is the most important decision you’ve ever made?",
-    "Do you think it is better to be optimistic or realistic?"
-]
+class Qlist:
+    def __init__(self):
+        self.default_questions = [
+            "If you could have any superpower, what would it be?",
+            "What's the most memorable vacation you've ever taken?",
+            "If you could meet any historical figure, who would it be and why?",
+            "What's the most important lesson you've learned in the past year?",
+            "If you could instantly become an expert in something, what would it be?",
+            "What's your favorite way to spend a day off?",
+            "If you could travel anywhere in the world, where would you go?",
+            "What's your favorite book and why?",
+            "What's one skill you wish you had?",
+            "Who is your biggest inspiration?",
+            "If you could switch lives with someone for a day, who would it be?",
+            "What's your favorite movie or TV show?",
+            "If you could live in any fictional world, which one would it be?",
+            "What's the best piece of advice you've ever received?",
+            "What's something you're really proud of?",
+            "If you could have dinner with anyone, dead or alive, who would it be?",
+            "What's your favorite hobby?",
+            "What's a goal you have for the next year?",
+            "If you could only eat one food for the rest of your life, what would it be?",
+            "What's your favorite childhood memory?",
+            "If you won the lottery, what's the first thing you would do?",
+            "What's your favorite way to relax?",
+            "What's the most adventurous thing you've ever done?",
+            "If you could have any job in the world, what would it be?",
+            "What's your favorite holiday and why?",
+            "If you could change one thing about the world, what would it be?",
+            "What's something you've always wanted to learn?",
+            "What's the best gift you've ever received?",
+            "If you could live anywhere in the world, where would it be?",
+            "What's your favorite season and why?"
+        ]
+        self.asked_questions = set()
+        self.user_submitted_questions = []
+
+    def get_random_question(self):
+        all_questions = self.user_submitted_questions + self.default_questions
+        available_questions = list(set(all_questions) - self.asked_questions)
+        if not available_questions:
+            self.asked_questions = set()
+            available_questions = all_questions
+        question = random.choice(available_questions)
+        self.asked_questions.add(question)
+        return question
+
+    def add_user_question(self, question):
+        self.user_submitted_questions.append(question)
+    
+    def remove_user_question(self, question):
+        self.user_submitted_questions.remove(question)
+    
+    def get_user_questions(self, user_id):
+        return [q for q in self.user_submitted_questions if q['user_id'] == user_id]
