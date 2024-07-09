@@ -1,5 +1,5 @@
 import discord
-from redbot.core import commands, Config, checks
+from redbot.core import commands, Config
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 from datetime import datetime, timedelta
 import pytz
@@ -26,6 +26,7 @@ class DailyQ(commands.Cog):
         self.bot.loop.create_task(self.check_and_ask_question())
 
     async def check_and_ask_question(self):
+        await self.bot.wait_until_red_ready()
         while True:
             now = datetime.now(pytz.utc)
             guilds = await self.config.all_guilds()
@@ -60,7 +61,7 @@ class DailyQ(commands.Cog):
         )
         embed.set_footer(text="Try `!q ask` to add your own daily questions")
         view = SkipVoteView(self)
-        message = await channel.send(embed=embed, view=view)
+        await channel.send(embed=embed, view=view)
         self.current_skip_votes = 0
         self.skip_voters = set()
 
@@ -194,11 +195,12 @@ class SkipVoteView(discord.ui.View):
         button.label = f"Skip Vote: {self.skip_votes}"
         await interaction.response.edit_message(view=self)
 
-        if self.skip_votes >= await self.cog.config.guild(interaction.guild).skip_votes_required():
+        skip_votes_required = await self.cog.config.guild(interaction.guild).skip_votes_required()
+        if self.skip_votes >= skip_votes_required:
             self.skip_votes = 0
             self.skip_voters = set()
-            await interaction.response.send_message("Skipping the question...", ephemeral=True)
             await self.cog.ask_question(interaction.channel)
+            await interaction.response.send_message("Skipping the question...", ephemeral=True)
 
 def setup(bot: commands.Bot):
     bot.add_cog(DailyQ(bot))
