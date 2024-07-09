@@ -20,9 +20,6 @@ class DailyQ(commands.Cog):
         }
         self.config.register_guild(**default_guild)
         self.qlist = Qlist()
-        self.current_skip_votes = 0
-        self.skip_voters = set()
-        self.next_question_time = None
         self.bot.loop.create_task(self.check_and_ask_question())
 
     async def check_and_ask_question(self):
@@ -36,6 +33,7 @@ class DailyQ(commands.Cog):
                 channel = guild.get_channel(settings["channel_id"])
                 if not channel:
                     continue
+                
                 specific_time = settings["specific_time"]
                 if specific_time:
                     specific_time = datetime.strptime(specific_time, "%H:%M").time()
@@ -61,8 +59,6 @@ class DailyQ(commands.Cog):
         embed.set_footer(text="Try `!q ask` to add your own daily questions")
         view = SkipVoteView(self)
         message = await channel.send(embed=embed, view=view)
-        self.current_skip_votes = 0
-        self.skip_voters = set()
         view.message = message
 
     @commands.group(name="question", aliases=["q"])
@@ -194,13 +190,18 @@ class SkipVoteView(discord.ui.View):
         self.skip_voters.add(user.id)
         self.skip_votes += 1
         button.label = f"Skip Vote: {self.skip_votes}"
-        await interaction.response.edit_message(view=self)
+        await interaction.message.edit(view=self)
 
-        if self.skip_votes >= await self.cog.config.guild(interaction.guild).skip_votes_required():
+        skip_votes_required = await self.cog.config.guild(interaction.guild).skip_votes_required()
+        if self.skip_votes >= skip_votes_required:
             self.skip_votes = 0
             self.skip_voters = set()
             await interaction.response.send_message("Skipping the question...", ephemeral=True)
-            await self.cog.ask_question(interaction.channel)
+            await self.cog.ask_question(interaction.channel)  # Ask a new question
 
-def setup(bot):
+    async def on_timeout(self):
+        if self.message:
+            await self.message.edit(view=None)
+
+def setup(bot: commands.Bot):
     bot.add_cog(DailyQ(bot))
