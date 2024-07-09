@@ -178,19 +178,25 @@ class SkipVoteView(discord.ui.View):
     def __init__(self, cog):
         super().__init__(timeout=None)
         self.cog = cog
+        self.skip_votes = 0
+        self.skip_voters = set()
 
     @discord.ui.button(label="Skip Vote: 0", style=discord.ButtonStyle.gray)
     async def skip_vote_button(self, button: discord.ui.Button, interaction: discord.Interaction):
         user = interaction.user
-        if user.id not in self.cog.skip_voters:
-            self.cog.skip_voters.add(user.id)
-            self.cog.current_skip_votes += 1
-            button.label = f"Skip Vote: {self.cog.current_skip_votes}"
-            await interaction.response.edit_message(view=self)
-            if self.cog.current_skip_votes >= await self.cog.config.guild(interaction.guild).skip_votes_required():
-                self.cog.current_skip_votes = 0
-                self.cog.skip_voters = set()
-                await self.cog.ask_question(interaction.channel)
+        if user.id in self.skip_voters:
+            await interaction.response.send_message("You have already voted to skip this question.", ephemeral=True)
+            return
+
+        self.skip_voters.add(user.id)
+        self.skip_votes += 1
+        button.label = f"Skip Vote: {self.skip_votes}"
+        await interaction.response.edit_message(view=self)
+
+        if self.skip_votes >= await self.cog.config.guild(interaction.guild).skip_votes_required():
+            self.skip_votes = 0
+            self.skip_voters = set()
+            await self.cog.ask_question(interaction.channel)
 
 def setup(bot: commands.Bot):
     bot.add_cog(DailyQ(bot))
