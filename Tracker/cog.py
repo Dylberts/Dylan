@@ -81,6 +81,9 @@ class Tracker(commands.Cog):
         if not enabled:
             return
 
+        if before.author.bot:
+            return
+
         exempt_channels = await self.config.exempt_channels()
         if before.channel.id in exempt_channels:
             return
@@ -97,7 +100,6 @@ class Tracker(commands.Cog):
                 embed.set_author(name=before.author.name, icon_url=before.author.avatar.url)
                 embed.add_field(name="User ID", value=before.author.id, inline=False)
                 embed.add_field(name="Original Message", value=before.content, inline=False)
-                embed.add_field(name="Edited Message", value=after.content, inline=False)
                 embed.set_footer(text=str(before.author.id))
                 await report_channel.send(embed=embed)
                 print(f"Reported edited message from {before.author.id}")
@@ -108,6 +110,9 @@ class Tracker(commands.Cog):
         print(f"on_message_delete called: enabled={enabled}, message.channel.id={message.channel.id}")
 
         if not enabled:
+            return
+
+        if message.author.bot:
             return
 
         exempt_channels = await self.config.exempt_channels()
