@@ -1,8 +1,6 @@
 import discord
 from redbot.core import commands, Config
 from datetime import datetime
-import aiohttp
-import os
 
 class Tracker(commands.Cog):
     def __init__(self, bot):
@@ -26,21 +24,18 @@ class Tracker(commands.Cog):
         """Enable the Tracker cog."""
         await self.config.enabled.set(True)
         await ctx.send("Tracker enabled.")
-        print("Tracker enabled.")
 
     @tracker.command()
     async def disable(self, ctx):
         """Disable the Tracker cog."""
         await self.config.enabled.set(False)
         await ctx.send("Tracker disabled.")
-        print("Tracker disabled.")
 
     @tracker.command()
     async def report(self, ctx, channel: discord.TextChannel):
         """Set the reporting channel."""
         await self.config.report_channel.set(channel.id)
         await ctx.send(f"Reporting channel set to {channel.mention}.")
-        print(f"Reporting channel set to {channel.id}.")
 
     @tracker.command()
     async def exempt(self, ctx, channel: discord.TextChannel):
@@ -50,10 +45,8 @@ class Tracker(commands.Cog):
             exempt_channels.append(channel.id)
             await self.config.exempt_channels.set(exempt_channels)
             await ctx.send(f"{channel.mention} added to exempt channels.")
-            print(f"{channel.id} added to exempt channels.")
         else:
             await ctx.send(f"{channel.mention} is already an exempt channel.")
-            print(f"{channel.id} is already an exempt channel.")
 
     @tracker.command()
     async def scrub(self, ctx, user: discord.User):
@@ -68,28 +61,14 @@ class Tracker(commands.Cog):
                         if embed.footer and embed.footer.text == str(user.id):
                             await message.delete()
                 await ctx.send(f"All reports for {user.mention} have been scrubbed.")
-                print(f"All reports for {user.id} have been scrubbed.")
             else:
                 await ctx.send("Reporting channel not set.")
-                print("Reporting channel not set.")
         else:
             await ctx.send("Reporting channel not set.")
-            print("Reporting channel not set.")
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.attachments and not message.author.bot:
-            attachment = message.attachments[0]
-            async with aiohttp.ClientSession() as session:
-                async with session.get(attachment.url) as response:
-                    if response.status == 200:
-                        data = await response.read()
-                        self.attachment_cache[message.id] = data
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         enabled = await self.config.enabled()
-        print(f"on_message_edit called: enabled={enabled}, before.channel.id={before.channel.id}")
 
         if not enabled:
             return
@@ -117,15 +96,14 @@ class Tracker(commands.Cog):
                 if before.attachments:
                     attachment = before.attachments[0]
                     embed.add_field(name="Original Attachment", value=f"[View Attachment]({attachment.url})", inline=False)
+                    self.attachment_cache[before.id] = attachment.url
 
                 embed.set_footer(text=str(before.author.id))
                 await report_channel.send(embed=embed)
-                print(f"Reported edited message from {before.author.id}")
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         enabled = await self.config.enabled()
-        print(f"on_message_delete called: enabled={enabled}, message.channel.id={message.channel.id}")
 
         if not enabled:
             return
@@ -150,17 +128,13 @@ class Tracker(commands.Cog):
                 embed.add_field(name="User ID", value=message.author.id, inline=False)
                 embed.add_field(name="Original Message", value=message.content, inline=False)
 
-                if message.attachments and message.id in self.attachment_cache:
-                    data = self.attachment_cache[message.id]
-                    file = discord.File(data, filename=message.attachments[0].filename)
-                    embed.add_field(name="Original Attachment", value=f"[View Attachment]({message.attachments[0].url})", inline=False)
-                    await report_channel.send(embed=embed, file=file)
-                    del self.attachment_cache[message.id]
-                else:
-                    await report_channel.send(embed=embed)
+                if message.attachments:
+                    attachment_url = self.attachment_cache.pop(message.id, None)
+                    if attachment_url:
+                        embed.add_field(name="Original Attachment", value=f"[View Attachment]({attachment_url})", inline=False)
 
                 embed.set_footer(text=str(message.author.id))
-                print(f"Reported deleted message from {message.author.id}")
+                await report_channel.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Tracker(bot))
