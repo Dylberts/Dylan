@@ -9,8 +9,18 @@ class threadbumper(commands.Cog):
     def __init__(self, bot: Red):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
-        self.config.register_guild(enabled=False)
+        self.config.register_guild(enabled=True)
         self.bumping_task = None
+
+        # Start the bumping task if enabled
+        self.bot.loop.create_task(self.initialize_bumper())
+
+    async def initialize_bumper(self):
+        await self.bot.wait_until_ready()
+        for guild in self.bot.guilds:
+            if await self.config.guild(guild).enabled():
+                if not self.bumping_task:
+                    self.bumping_task = self.bot.loop.create_task(self.bump_threads(guild))
 
     @commands.group()
     @commands.guild_only()
@@ -44,6 +54,13 @@ class threadbumper(commands.Cog):
                     break
                 for thread in channel.threads:
                     if not thread.locked and not thread.archived:
+                        try:
+                            await thread.edit(name=thread.name + ' ')
+                            await asyncio.sleep(5)  # Sleep to avoid rate limiting
+                        except:
+                            pass  # Handle any exceptions if the thread can't be edited
+                for thread in channel.threads:  # Check private threads as well
+                    if thread.is_private() and not thread.locked and not thread.archived:
                         try:
                             await thread.edit(name=thread.name + ' ')
                             await asyncio.sleep(5)  # Sleep to avoid rate limiting
