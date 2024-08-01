@@ -94,7 +94,7 @@ class Tracker(commands.Cog):
 
                 if before.attachments:
                     attachment = before.attachments[0]
-                    embed.set_image(url=f"{attachment.url}")
+                    embed.set_image(url=attachment.url)
 
                 embed.set_footer(text=str(before.author.id))
                 await report_channel.send(embed=embed)
@@ -128,8 +128,8 @@ class Tracker(commands.Cog):
 
                 if message.attachments:
                     attachment = message.attachments[0]
-                    embed.set_image(url=f"{attachment.url}")
-
+                    embed.set_image(url=attachment.url)
+                
                 embed.set_footer(text=str(message.author.id))
                 await report_channel.send(embed=embed)
 
