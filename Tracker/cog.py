@@ -1,13 +1,14 @@
 import discord
 from redbot.core import commands, Config
 from datetime import datetime
+import aiohttp
 
 class Tracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
-        
+
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'{self.__class__.__name__} is ready.')
@@ -139,7 +140,14 @@ class Tracker(commands.Cog):
 
                 if message.attachments:
                     attachment = message.attachments[0]
-                    embed.add_field(name="Original Attachment", value=f"[View Attachment]({attachment.url})", inline=False)
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(attachment.url) as response:
+                            if response.status == 200:
+                                data = await response.read()
+                                file = discord.File(data, filename=attachment.filename)
+                                await report_channel.send(embed=embed, file=file)
+                                print(f"Reported deleted message from {message.author.id} with attachment.")
+                                return
 
                 embed.set_footer(text=str(message.author.id))
                 await report_channel.send(embed=embed)
