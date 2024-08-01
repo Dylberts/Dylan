@@ -7,8 +7,7 @@ class Tracker(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
-        self.attachment_cache = {}
-
+        
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'{self.__class__.__name__} is ready.')
@@ -95,10 +94,8 @@ class Tracker(commands.Cog):
 
                 if before.attachments:
                     attachment = before.attachments[0]
-                    embed.add_field(name="Original Attachment", value=f"[View Attachment]({attachment.url})", inline=False)
-                    self.attachment_cache[before.id] = attachment.url
+                    embed.set_footer(text=str(before.author.id), icon_url=attachment.url)
 
-                embed.set_footer(text=str(before.author.id))
                 await report_channel.send(embed=embed)
 
     @commands.Cog.listener()
@@ -129,11 +126,9 @@ class Tracker(commands.Cog):
                 embed.add_field(name="Original Message", value=message.content, inline=False)
 
                 if message.attachments:
-                    attachment_url = self.attachment_cache.pop(message.id, None)
-                    if attachment_url:
-                        embed.add_field(name="Original Attachment", value=f"[View Attachment]({attachment_url})", inline=False)
+                    attachment = message.attachments[0]
+                    embed.set_footer(text=str(message.author.id), icon_url=attachment.url)
 
-                embed.set_footer(text=str(message.author.id))
                 await report_channel.send(embed=embed)
 
 async def setup(bot):
