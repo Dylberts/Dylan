@@ -9,7 +9,8 @@ class Tracker(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
-        
+        self.attachment_cache = {}
+
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'{self.__class__.__name__} is ready.')
@@ -76,6 +77,16 @@ class Tracker(commands.Cog):
             print("Reporting channel not set.")
 
     @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.attachments and not message.author.bot:
+            attachment = message.attachments[0]
+            async with aiohttp.ClientSession() as session:
+                async with session.get(attachment.url) as response:
+                    if response.status == 200:
+                        data = await response.read()
+                        self.attachment_cache[message.id] = data
+
+    @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         enabled = await self.config.enabled()
         print(f"on_message_edit called: enabled={enabled}, before.channel.id={before.channel.id}")
@@ -139,20 +150,16 @@ class Tracker(commands.Cog):
                 embed.add_field(name="User ID", value=message.author.id, inline=False)
                 embed.add_field(name="Original Message", value=message.content, inline=False)
 
-                if message.attachments:
-                    attachment = message.attachments[0]
-                    async with aiohttp.ClientSession() as session:
-                        async with session.get(attachment.url) as response:
-                            if response.status == 200:
-                                data = await response.read()
-                                file = discord.File(data, filename=attachment.filename)
-                                embed.add_field(name="Original Attachment", value=f"[View Attachment]({attachment.url})", inline=False)
-                                await report_channel.send(embed=embed, file=file)
-                                print(f"Reported deleted message from {message.author.id} with attachment.")
-                                return
+                if message.attachments and message.id in self.attachment_cache:
+                    data = self.attachment_cache[message.id]
+                    file = discord.File(data, filename=message.attachments[0].filename)
+                    embed.add_field(name="Original Attachment", value=f"[View Attachment]({message.attachments[0].url})", inline=False)
+                    await report_channel.send(embed=embed, file=file)
+                    del self.attachment_cache[message.id]
+                else:
+                    await report_channel.send(embed=embed)
 
                 embed.set_footer(text=str(message.author.id))
-                await report_channel.send(embed=embed)
                 print(f"Reported deleted message from {message.author.id}")
 
 async def setup(bot):
