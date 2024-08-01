@@ -23,18 +23,21 @@ class Tracker(commands.Cog):
         """Enable the Tracker cog."""
         await self.config.enabled.set(True)
         await ctx.send("Tracker enabled.")
+        print("Tracker enabled.")
 
     @tracker.command()
     async def disable(self, ctx):
         """Disable the Tracker cog."""
         await self.config.enabled.set(False)
         await ctx.send("Tracker disabled.")
+        print("Tracker disabled.")
 
     @tracker.command()
     async def report(self, ctx, channel: discord.TextChannel):
         """Set the reporting channel."""
         await self.config.report_channel.set(channel.id)
         await ctx.send(f"Reporting channel set to {channel.mention}.")
+        print(f"Reporting channel set to {channel.id}.")
 
     @tracker.command()
     async def exempt(self, ctx, channel: discord.TextChannel):
@@ -44,8 +47,10 @@ class Tracker(commands.Cog):
             exempt_channels.append(channel.id)
             await self.config.exempt_channels.set(exempt_channels)
             await ctx.send(f"{channel.mention} added to exempt channels.")
+            print(f"{channel.id} added to exempt channels.")
         else:
             await ctx.send(f"{channel.mention} is already an exempt channel.")
+            print(f"{channel.id} is already an exempt channel.")
 
     @tracker.command()
     async def scrub(self, ctx, user: discord.User):
@@ -60,14 +65,20 @@ class Tracker(commands.Cog):
                         if embed.footer and embed.footer.text == str(user.id):
                             await message.delete()
                 await ctx.send(f"All reports for {user.mention} have been scrubbed.")
+                print(f"All reports for {user.id} have been scrubbed.")
             else:
                 await ctx.send("Reporting channel not set.")
+                print("Reporting channel not set.")
         else:
             await ctx.send("Reporting channel not set.")
+            print("Reporting channel not set.")
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if not await self.config.enabled():
+        enabled = await self.config.enabled()
+        print(f"on_message_edit called: enabled={enabled}, before.channel.id={before.channel.id}")
+
+        if not enabled:
             return
 
         exempt_channels = await self.config.exempt_channels()
@@ -83,16 +94,20 @@ class Tracker(commands.Cog):
                     color=0x6EDFBA,
                     timestamp=datetime.utcnow()
                 )
-                embed.set_author(name=before.author.name, icon_url=before.author.avatar_url)
+                embed.set_author(name=before.author.name, icon_url=before.author.avatar.url)
                 embed.add_field(name="User ID", value=before.author.id, inline=False)
                 embed.add_field(name="Original Message", value=before.content, inline=False)
                 embed.add_field(name="Edited Message", value=after.content, inline=False)
                 embed.set_footer(text=str(before.author.id))
                 await report_channel.send(embed=embed)
+                print(f"Reported edited message from {before.author.id}")
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
-        if not await self.config.enabled():
+        enabled = await self.config.enabled()
+        print(f"on_message_delete called: enabled={enabled}, message.channel.id={message.channel.id}")
+
+        if not enabled:
             return
 
         exempt_channels = await self.config.exempt_channels()
@@ -108,11 +123,12 @@ class Tracker(commands.Cog):
                     color=0x6EDFBA,
                     timestamp=datetime.utcnow()
                 )
-                embed.set_author(name=message.author.name, icon_url=message.author.avatar_url)
+                embed.set_author(name=message.author.name, icon_url=message.author.avatar.url)
                 embed.add_field(name="User ID", value=message.author.id, inline=False)
                 embed.add_field(name="Original Message", value=message.content, inline=False)
                 embed.set_footer(text=str(message.author.id))
                 await report_channel.send(embed=embed)
+                print(f"Reported deleted message from {message.author.id}")
 
 async def setup(bot):
     await bot.add_cog(Tracker(bot))
