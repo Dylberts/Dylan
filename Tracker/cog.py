@@ -100,6 +100,11 @@ class Tracker(commands.Cog):
                 embed.set_author(name=before.author.name, icon_url=before.author.avatar.url)
                 embed.add_field(name="User ID", value=before.author.id, inline=False)
                 embed.add_field(name="Original Message", value=before.content, inline=False)
+
+                if before.attachments:
+                    attachment = before.attachments[0]
+                    embed.add_field(name="Original Attachment", value=f"[View Attachment]({attachment.url})", inline=False)
+
                 embed.set_footer(text=str(before.author.id))
                 await report_channel.send(embed=embed)
                 print(f"Reported edited message from {before.author.id}")
@@ -131,6 +136,11 @@ class Tracker(commands.Cog):
                 embed.set_author(name=message.author.name, icon_url=message.author.avatar.url)
                 embed.add_field(name="User ID", value=message.author.id, inline=False)
                 embed.add_field(name="Original Message", value=message.content, inline=False)
+
+                if message.attachments:
+                    attachment = message.attachments[0]
+                    embed.add_field(name="Original Attachment", value=f"[View Attachment]({attachment.url})", inline=False)
+
                 embed.set_footer(text=str(message.author.id))
                 await report_channel.send(embed=embed)
                 print(f"Reported deleted message from {message.author.id}")
