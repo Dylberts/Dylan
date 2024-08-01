@@ -105,6 +105,7 @@ class Tracker(commands.Cog):
                 if before.attachments:
                     attachment = before.attachments[0]
                     embed.add_field(name="Original Attachment", value=f"[View Attachment]({attachment.url})", inline=False)
+                    embed.set_image(url=attachment.url)
 
                 embed.set_footer(text=str(before.author.id))
                 await report_channel.send(embed=embed)
@@ -145,6 +146,8 @@ class Tracker(commands.Cog):
                             if response.status == 200:
                                 data = await response.read()
                                 file = discord.File(data, filename=attachment.filename)
+                                embed.add_field(name="Original Attachment", value=f"[View Attachment]({attachment.url})", inline=False)
+                                embed.set_image(url=attachment.url)
                                 await report_channel.send(embed=embed, file=file)
                                 print(f"Reported deleted message from {message.author.id} with attachment.")
                                 return
