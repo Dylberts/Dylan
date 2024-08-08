@@ -1,6 +1,5 @@
 import discord
 from redbot.core import commands, Config
-from datetime import datetime
 
 class Tracker(commands.Cog):
     def __init__(self, bot):
