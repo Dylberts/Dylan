@@ -102,14 +102,11 @@ class Tracker(commands.Cog):
                     color=0x6EDFBA,
                     timestamp=datetime.utcnow()
                 )
-                embed.set_author(name=f"{before.author.name}#{before.author.discriminator} | {before.author.id}", icon_url=before.author.avatar.url)
+                embed.set_thumbnail(url=before.author.avatar.url)
                 embed.add_field(name="User", value=f"{before.author.mention}", inline=False)
+                embed.add_field(name="User ID", value=f"{before.author.id}", inline=False)
                 embed.add_field(name="Original Message", value=f"> {before.content}", inline=False)
-                embed.add_field(name="Edited Message", value=f"[View Edited Message]({after.jump_url})", inline=False)
-
-                if before.attachments:
-                    attachment = before.attachments[0]
-                    embed.set_image(url=attachment.url)
+                embed.add_field(name="Edited Message", value=f"[Click here to view](https://discord.com/channels/{before.guild.id}/{before.channel.id}/{after.id})", inline=False)
 
                 await report_channel.send(embed=embed)
 
@@ -135,8 +132,9 @@ class Tracker(commands.Cog):
                     color=0x6EDFBA,
                     timestamp=datetime.utcnow()
                 )
-                embed.set_author(name=f"{message.author.name}#{message.author.discriminator} | {message.author.id}", icon_url=message.author.avatar.url)
+                embed.set_thumbnail(url=message.author.avatar.url)
                 embed.add_field(name="User", value=f"{message.author.mention}", inline=False)
+                embed.add_field(name="User ID", value=f"{message.author.id}", inline=False)
                 embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
 
                 if message.attachments:
