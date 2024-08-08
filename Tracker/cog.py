@@ -83,7 +83,6 @@ class Tracker(commands.Cog):
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         enabled = await self.config.enabled()
-
         if not enabled:
             return
 
@@ -92,9 +91,6 @@ class Tracker(commands.Cog):
 
         exempt_channels = await self.config.exempt_channels()
         if before.channel.id in exempt_channels:
-            return
-
-        if before.content == after.content:
             return
 
         report_channel_id = await self.config.report_channel()
@@ -106,10 +102,10 @@ class Tracker(commands.Cog):
                     color=0x6EDFBA,
                     timestamp=datetime.utcnow()
                 )
-                embed.set_author(name=before.author.name, icon_url=before.author.avatar.url)
-                embed.add_field(name="User", value=f"{before.author.mention} | {before.author.id}", inline=False)
+                embed.set_author(name=f"{before.author.name}#{before.author.discriminator} | {before.author.id}", icon_url=before.author.avatar.url)
+                embed.add_field(name="User", value=f"{before.author.mention}", inline=False)
                 embed.add_field(name="Original Message", value=f"> {before.content}", inline=False)
-                embed.add_field(name="Edited Message", value=f"[Jump to Edited Message]({after.jump_url})", inline=False)
+                embed.add_field(name="Edited Message", value=f"[View Edited Message]({after.jump_url})", inline=False)
 
                 if before.attachments:
                     attachment = before.attachments[0]
@@ -120,7 +116,6 @@ class Tracker(commands.Cog):
     @commands.Cog.listener()
     async def on_message_delete(self, message):
         enabled = await self.config.enabled()
-
         if not enabled:
             return
 
@@ -140,9 +135,9 @@ class Tracker(commands.Cog):
                     color=0x6EDFBA,
                     timestamp=datetime.utcnow()
                 )
-                embed.set_author(name=message.author.name, icon_url=message.author.avatar.url)
-                embed.add_field(name="User", value=f"{message.author.mention} | {message.author.id}", inline=False)
-                embed.add_field(name="Original Message", value=message.content, inline=False)
+                embed.set_author(name=f"{message.author.name}#{message.author.discriminator} | {message.author.id}", icon_url=message.author.avatar.url)
+                embed.add_field(name="User", value=f"{message.author.mention}", inline=False)
+                embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
 
                 if message.attachments:
                     attachment = message.attachments[0]
