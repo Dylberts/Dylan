@@ -108,8 +108,8 @@ class Tracker(commands.Cog):
                 )
                 embed.set_author(name=before.author.name, icon_url=before.author.avatar.url)
                 embed.add_field(name="User", value=f"{before.author.mention} | {before.author.id}", inline=False)
-                embed.add_field(name="Original Message", value=f"[Jump to Message]({before.jump_url})", inline=False)
-                embed.add_field(name="Edited Message", value=after.content, inline=False)
+                embed.add_field(name="Original Message", value=f"> {before.content}", inline=False)
+                embed.add_field(name="Edited Message", value=f"[Jump to Edited Message]({after.jump_url})", inline=False)
 
                 if before.attachments:
                     attachment = before.attachments[0]
