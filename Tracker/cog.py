@@ -99,13 +99,11 @@ class Tracker(commands.Cog):
             if report_channel:
                 embed = discord.Embed(
                     title="Message Edited",
-                    color=0x6EDFBA,
-                    timestamp=datetime.utcnow()
+                    color=0x6EDFBA
                 )
                 embed.set_thumbnail(url=before.author.avatar.url)
                 embed.add_field(name="User", value=f"{before.author.mention}", inline=False)
-                embed.add_field(name="User ID", value=f"{before.author.id}", inline=False)
-                embed.add_field(name="Original Message", value=f"> {before.content}", inline=False)
+                embed.add_field(name="Original Message", value=f"> {before.content}" if not before.attachments else before.content, inline=False)
                 embed.add_field(name="Edited Message", value=f"[Click here to view](https://discord.com/channels/{before.guild.id}/{before.channel.id}/{after.id})", inline=False)
 
                 await report_channel.send(embed=embed)
@@ -129,13 +127,11 @@ class Tracker(commands.Cog):
             if report_channel:
                 embed = discord.Embed(
                     title="Message Deleted",
-                    color=0x6EDFBA,
-                    timestamp=datetime.utcnow()
+                    color=0x6EDFBA
                 )
                 embed.set_thumbnail(url=message.author.avatar.url)
                 embed.add_field(name="User", value=f"{message.author.mention}", inline=False)
-                embed.add_field(name="User ID", value=f"{message.author.id}", inline=False)
-                embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
+                embed.add_field(name="Original Message", value=f"> {message.content}" if not message.attachments else message.content, inline=False)
 
                 if message.attachments:
                     attachment = message.attachments[0]
