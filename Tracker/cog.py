@@ -31,10 +31,25 @@ class Tracker(commands.Cog):
         await ctx.send("Tracker disabled.")
 
     @tracker.command()
-    async def report(self, ctx, channel: discord.TextChannel):
-        """Set the reporting channel."""
-        await self.config.report_channel.set(channel.id)
-        await ctx.send(f"Reporting channel set to {channel.mention}.")
+    async def report(self, ctx, target: str):
+        """Set the reporting channel or forum thread."""
+        try:
+            # Try to convert the target to a channel ID
+            channel = await commands.TextChannelConverter().convert(ctx, target)
+            await self.config.report_channel.set(channel.id)
+            await ctx.send(f"Reporting channel set to {channel.mention}.")
+        except commands.BadArgument:
+            try:
+                # If the target is not a channel, assume it's a thread ID
+                thread_id = int(target)
+                thread = await self.bot.fetch_channel(thread_id)
+                if isinstance(thread, discord.Thread):
+                    await self.config.report_channel.set(thread.id)
+                    await ctx.send(f"Reporting thread set to {thread.name}.")
+                else:
+                    await ctx.send("Invalid thread ID.")
+            except (ValueError, discord.NotFound):
+                await ctx.send("Invalid channel or thread ID.")
 
     @tracker.command()
     async def exempt(self, ctx, channel: discord.TextChannel):
@@ -79,6 +94,9 @@ class Tracker(commands.Cog):
         if before.channel.id in exempt_channels:
             return
 
+        if before.content == after.content:
+            return
+
         report_channel_id = await self.config.report_channel()
         if report_channel_id:
             report_channel = self.bot.get_channel(report_channel_id)
@@ -91,6 +109,7 @@ class Tracker(commands.Cog):
                 embed.set_author(name=before.author.name, icon_url=before.author.avatar.url)
                 embed.add_field(name="User ID", value=before.author.id, inline=False)
                 embed.add_field(name="Original Message", value=before.content, inline=False)
+                embed.add_field(name="Edited Message", value=after.content, inline=False)
 
                 if before.attachments:
                     attachment = before.attachments[0]
