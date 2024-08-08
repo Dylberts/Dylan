@@ -107,15 +107,14 @@ class Tracker(commands.Cog):
                     timestamp=datetime.utcnow()
                 )
                 embed.set_author(name=before.author.name, icon_url=before.author.avatar.url)
-                embed.add_field(name="User ID", value=before.author.id, inline=False)
-                embed.add_field(name="Original Message", value=before.content, inline=False)
+                embed.add_field(name="User", value=f"{before.author.mention} | {before.author.id}", inline=False)
+                embed.add_field(name="Original Message", value=f"[Jump to Message]({before.jump_url})", inline=False)
                 embed.add_field(name="Edited Message", value=after.content, inline=False)
 
                 if before.attachments:
                     attachment = before.attachments[0]
                     embed.set_image(url=attachment.url)
 
-                embed.set_footer(text=str(before.author.id))
                 await report_channel.send(embed=embed)
 
     @commands.Cog.listener()
@@ -142,14 +141,13 @@ class Tracker(commands.Cog):
                     timestamp=datetime.utcnow()
                 )
                 embed.set_author(name=message.author.name, icon_url=message.author.avatar.url)
-                embed.add_field(name="User ID", value=message.author.id, inline=False)
+                embed.add_field(name="User", value=f"{message.author.mention} | {message.author.id}", inline=False)
                 embed.add_field(name="Original Message", value=message.content, inline=False)
 
                 if message.attachments:
                     attachment = message.attachments[0]
                     embed.set_image(url=attachment.url)
-                
-                embed.set_footer(text=str(message.author.id))
+
                 await report_channel.send(embed=embed)
 
 async def setup(bot):
