@@ -8,7 +8,9 @@ class Tracker(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
-        self.temp_folder = os.path.join(os.getcwd(), "temp_photo_tracking")  # Use an absolute path
+        
+        # Set the absolute path for the temp folder
+        self.temp_folder = '/home/dylberts/Desktop/Red Bot/Isekai Bot/redv3_isekai_2024-06-09T04-36-16/cogs/CogManager/cogs/Tracker/temp_photo_tracking'
 
         try:
             # Ensure the temporary folder exists
