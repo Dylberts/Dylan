@@ -1,5 +1,6 @@
 import discord
 from redbot.core import commands, Config
+from datetime import datetime
 
 class Tracker(commands.Cog):
     def __init__(self, bot):
@@ -30,25 +31,10 @@ class Tracker(commands.Cog):
         await ctx.send("Tracker disabled.")
 
     @tracker.command()
-    async def report(self, ctx, target: str):
-        """Set the reporting channel or forum thread."""
-        try:
-            # Try to convert the target to a channel ID
-            channel = await commands.TextChannelConverter().convert(ctx, target)
-            await self.config.report_channel.set(channel.id)
-            await ctx.send(f"Reporting channel set to {channel.mention}.")
-        except commands.BadArgument:
-            try:
-                # If the target is not a channel, assume it's a thread ID
-                thread_id = int(target)
-                thread = await self.bot.fetch_channel(thread_id)
-                if isinstance(thread, discord.Thread):
-                    await self.config.report_channel.set(thread.id)
-                    await ctx.send(f"Reporting thread set to {thread.name}.")
-                else:
-                    await ctx.send("Invalid thread ID.")
-            except (ValueError, discord.NotFound):
-                await ctx.send("Invalid channel or thread ID.")
+    async def report(self, ctx, channel: discord.TextChannel):
+        """Set the reporting channel."""
+        await self.config.report_channel.set(channel.id)
+        await ctx.send(f"Reporting channel set to {channel.mention}.")
 
     @tracker.command()
     async def exempt(self, ctx, channel: discord.TextChannel):
@@ -92,6 +78,15 @@ class Tracker(commands.Cog):
         if before.channel.id in exempt_channels:
             return
 
+        # Check if the edit involves only adding a GIF link
+        if before.content == after.content and before.attachments == after.attachments:
+            return
+
+        # Check if the edited message contains a GIF link or GIF attachment
+        gif_keywords = [".gif"]
+        if any(keyword in after.content for keyword in gif_keywords):
+            return
+
         report_channel_id = await self.config.report_channel()
         if report_channel_id:
             report_channel = self.bot.get_channel(report_channel_id)
@@ -130,8 +125,10 @@ class Tracker(commands.Cog):
                 )
                 embed.set_thumbnail(url=message.author.avatar.url)
                 embed.add_field(name="User", value=f"{message.author.mention}", inline=False)
-                embed.add_field(name="Original Message", value=f"> {message.content}" if not message.attachments else message.content, inline=False)
+                if message.content:
+                    embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
 
+                # If the message had an attachment (image/video), include it
                 if message.attachments:
                     attachment = message.attachments[0]
                     embed.set_image(url=attachment.url)
