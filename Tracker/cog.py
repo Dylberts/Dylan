@@ -3,16 +3,17 @@ from redbot.core import commands, Config
 from datetime import datetime
 import aiohttp
 import os
-import tempfile
+from tempfile import TemporaryDirectory
 
 class Tracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
-        
-        # Create a temporary directory for downloads
-        self.download_folder = tempfile.TemporaryDirectory()
+        self.temp_dir = TemporaryDirectory()  # Temporary directory for image downloads
+
+    def cog_unload(self):
+        self.temp_dir.cleanup()  # Clean up the temporary directory when the cog is unloaded
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -126,22 +127,26 @@ class Tracker(commands.Cog):
                 if message.content:
                     embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
 
-                # Download and re-upload the image/video
-                for attachment in message.attachments:
-                    file_path = await self.download_file(attachment.url, attachment.filename)
-                    if file_path:
-                        file = discord.File(file_path)
-                        embed.set_image(url=f"attachment://{attachment.filename}")
-                        await report_channel.send(embed=embed, file=file)
-                        os.remove(file_path)  # Clean up the file after sending
-                    else:
-                        await report_channel.send(embed=embed)
+                # Handle image or video attachments
+                if message.attachments:
+                    for attachment in message.attachments:
+                        if attachment.content_type and ('image' in attachment.content_type or 'video' in attachment.content_type):
+                            file_path = await self.download_file(attachment.url, attachment.filename)
+                            if file_path:
+                                file = discord.File(file_path)
+                                embed.set_image(url=f"attachment://{attachment.filename}")
+                                await report_channel.send(embed=embed, file=file)
+                                os.remove(file_path)  # Clean up the file after sending
+                            else:
+                                await report_channel.send(embed=embed)
+                        else:
+                            await report_channel.send(embed=embed)
                 else:
                     await report_channel.send(embed=embed)
 
     async def download_file(self, url, filename):
         """Download a file from a given URL and save it locally."""
-        file_path = os.path.join(self.download_folder.name, filename)
+        file_path = os.path.join(self.temp_dir.name, filename)
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
@@ -152,10 +157,6 @@ class Tracker(commands.Cog):
         except Exception as e:
             print(f"Failed to download {url}: {e}")
         return None
-
-    def cog_unload(self):
-        """Cleanup when the cog is unloaded."""
-        self.download_folder.cleanup()
 
 async def setup(bot):
     await bot.add_cog(Tracker(bot))
