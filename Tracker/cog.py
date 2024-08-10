@@ -7,7 +7,7 @@ class Tracker(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
-        
+
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'{self.__class__.__name__} is ready.')
@@ -78,27 +78,18 @@ class Tracker(commands.Cog):
         if before.channel.id in exempt_channels:
             return
 
-        # Check if the edit involves only adding a GIF link
-        if before.content == after.content and before.attachments == after.attachments:
-            return
-
-        # Check if the edited message contains a GIF link or GIF attachment
-        gif_keywords = [".gif"]
-        if any(keyword in after.content for keyword in gif_keywords):
-            return
-
         report_channel_id = await self.config.report_channel()
         if report_channel_id:
             report_channel = self.bot.get_channel(report_channel_id)
             if report_channel:
                 embed = discord.Embed(
                     title="Message Edited",
-                    color=0x6EDFBA
+                    color=0x6EDFBA,
                 )
                 embed.set_thumbnail(url=before.author.avatar.url)
                 embed.add_field(name="User", value=f"{before.author.mention}", inline=False)
-                embed.add_field(name="Original Message", value=f"> {before.content}" if not before.attachments else before.content, inline=False)
-                embed.add_field(name="Edited Message", value=f"[Click here to view](https://discord.com/channels/{before.guild.id}/{before.channel.id}/{after.id})", inline=False)
+                embed.add_field(name="Original Message", value=f"> {before.content}", inline=False)
+                embed.add_field(name="Edited Message", value=f"[Click here to view edited message](<{after.jump_url}>)", inline=False)
 
                 await report_channel.send(embed=embed)
 
@@ -115,23 +106,27 @@ class Tracker(commands.Cog):
         if message.channel.id in exempt_channels:
             return
 
+        # Preemptively store the attachment URL
+        attachment_url = None
+        if message.attachments:
+            attachment_url = message.attachments[0].url
+
         report_channel_id = await self.config.report_channel()
         if report_channel_id:
             report_channel = self.bot.get_channel(report_channel_id)
             if report_channel:
                 embed = discord.Embed(
                     title="Message Deleted",
-                    color=0x6EDFBA
+                    color=0x6EDFBA,
                 )
                 embed.set_thumbnail(url=message.author.avatar.url)
                 embed.add_field(name="User", value=f"{message.author.mention}", inline=False)
                 if message.content:
                     embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
 
-                # If the message had an attachment (image/video), include it
-                if message.attachments:
-                    attachment = message.attachments[0]
-                    embed.set_image(url=attachment.url)
+                # Use the preemptively stored attachment URL
+                if attachment_url:
+                    embed.set_image(url=attachment_url)
 
                 await report_channel.send(embed=embed)
 
