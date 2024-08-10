@@ -7,6 +7,7 @@ class Tracker(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
+        self.message_attachments = {}  # Dictionary to store message attachments before deletion
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -106,6 +107,9 @@ class Tracker(commands.Cog):
         if message.channel.id in exempt_channels:
             return
 
+        # Retrieve the attachment URLs from the pre-stored dictionary
+        attachments = self.message_attachments.pop(message.id, [])
+
         report_channel_id = await self.config.report_channel()
         if report_channel_id:
             report_channel = self.bot.get_channel(report_channel_id)
@@ -120,12 +124,17 @@ class Tracker(commands.Cog):
                 if message.content:
                     embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
 
-                # Checking for attachments and adding the first attachment as the embed's image
-                if message.attachments:
-                    attachment = message.attachments[0]
-                    embed.set_image(url=attachment.url)
+                # If attachments exist, add the first one as the embed's image
+                if attachments:
+                    embed.set_image(url=attachments[0])
 
                 await report_channel.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        """Preemptively store attachment URLs when a message is sent."""
+        if message.attachments:
+            self.message_attachments[message.id] = [attachment.url for attachment in message.attachments]
 
 async def setup(bot):
     await bot.add_cog(Tracker(bot))
