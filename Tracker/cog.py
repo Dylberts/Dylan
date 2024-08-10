@@ -1,17 +1,16 @@
 import discord
-import aiofiles
-import os
 from redbot.core import commands, Config
+import os
+import aiofiles
+import aiohttp
+from tempfile import gettempdir
 
 class Tracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
-        self.cache_dir = "tracker_cache"
-        if not os.path.exists(self.cache_dir):
-            os.makedirs(self.cache_dir)
-
+        
     @commands.Cog.listener()
     async def on_ready(self):
         print(f'{self.__class__.__name__} is ready.')
@@ -69,6 +68,18 @@ class Tracker(commands.Cog):
         else:
             await ctx.send("Reporting channel not set.")
 
+    async def download_attachment(self, attachment: discord.Attachment, file_name: str):
+        """Download an attachment to a temporary directory."""
+        temp_dir = gettempdir()
+        file_path = os.path.join(temp_dir, file_name)
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(attachment.url) as response:
+                if response.status == 200:
+                    async with aiofiles.open(file_path, mode='wb') as f:
+                        await f.write(await response.read())
+        return file_path
+
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
         enabled = await self.config.enabled()
@@ -99,7 +110,21 @@ class Tracker(commands.Cog):
                 embed.add_field(name="Original Message", value=f"> {before.content}" if not before.attachments else before.content, inline=False)
                 embed.add_field(name="Edited Message", value=f"[Click here to view](https://discord.com/channels/{before.guild.id}/{before.channel.id}/{after.id})", inline=False)
 
-                await report_channel.send(embed=embed)
+                # If the message had an attachment (image/video), include it
+                if before.attachments:
+                    attachment = before.attachments[0]
+                    file_path = await self.download_attachment(attachment, attachment.filename)
+                    file = discord.File(file_path, filename=attachment.filename)
+
+                    # Add "Original Message" field even for attachments
+                    embed.add_field(name="Original Message", value="(Attachment below)", inline=False)
+                    embed.set_image(url=f"attachment://{attachment.filename}")
+                    await report_channel.send(embed=embed, file=file)
+                    
+                    # Clean up the temporary file
+                    os.remove(file_path)
+                else:
+                    await report_channel.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
@@ -125,23 +150,31 @@ class Tracker(commands.Cog):
                 embed.set_thumbnail(url=message.author.avatar.url)
                 embed.add_field(name="User", value=f"{message.author.mention}", inline=False)
                 
-                # Add the "Original Message" field even if there's no text content
+                # Add "Original Message" field even if there's no text content
                 if message.content:
                     embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
                 else:
-                    embed.add_field(name="Original Message", value="(no text content)", inline=False)
+                    embed.add_field(name="Original Message", value="(Attachment below)", inline=False)
 
-                # If the message had an attachment (image/video), include it
+                # Handle attachments if present
                 if message.attachments:
                     attachment = message.attachments[0]
-                    embed.set_image(url=attachment.url)
-
-                    # Store the attachment temporarily in the cache directory
-                    file_path = os.path.join(self.cache_dir, f"{message.id}_{attachment.filename}")
-                    async with aiofiles.open(file_path, 'wb') as f:
-                        await attachment.save(f)
-
-                await report_channel.send(embed=embed)
+                    
+                    # Download the attachment to a temporary file
+                    file_path = await self.download_attachment(attachment, attachment.filename)
+                    file = discord.File(file_path, filename=attachment.filename)
+                    
+                    # Set the image in the embed
+                    embed.set_image(url=f"attachment://{attachment.filename}")
+                    
+                    # Send the embed with the attached file
+                    await report_channel.send(embed=embed, file=file)
+                    
+                    # Clean up the temporary file
+                    os.remove(file_path)
+                else:
+                    # If no attachments, send just the embed
+                    await report_channel.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Tracker(bot))
