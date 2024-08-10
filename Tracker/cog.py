@@ -8,11 +8,16 @@ class Tracker(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
-        self.temp_folder = "temp_attachments"  # Temporary folder to store attachments
+        self.temp_folder = os.path.join(os.getcwd(), "temp_attachments")  # Use an absolute path
 
-        # Ensure the temporary folder exists
-        if not os.path.exists(self.temp_folder):
-            os.makedirs(self.temp_folder)
+        try:
+            # Ensure the temporary folder exists
+            if not os.path.exists(self.temp_folder):
+                os.makedirs(self.temp_folder)
+        except PermissionError as e:
+            print(f"Permission error while creating temp folder: {e}")
+        except Exception as e:
+            print(f"Unexpected error while creating temp folder: {e}")
         
     @commands.Cog.listener()
     async def on_ready(self):
