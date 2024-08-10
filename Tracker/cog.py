@@ -3,17 +3,16 @@ from redbot.core import commands, Config
 from datetime import datetime
 import aiohttp
 import os
+import tempfile
 
 class Tracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
-        self.download_folder = "downloads"  # Folder to store downloaded images
-
-        # Ensure the download folder exists
-        if not os.path.exists(self.download_folder):
-            os.makedirs(self.download_folder)
+        
+        # Create a temporary directory for downloads
+        self.download_folder = tempfile.TemporaryDirectory()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -142,7 +141,7 @@ class Tracker(commands.Cog):
 
     async def download_file(self, url, filename):
         """Download a file from a given URL and save it locally."""
-        file_path = os.path.join(self.download_folder, filename)
+        file_path = os.path.join(self.download_folder.name, filename)
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
@@ -153,6 +152,10 @@ class Tracker(commands.Cog):
         except Exception as e:
             print(f"Failed to download {url}: {e}")
         return None
+
+    def cog_unload(self):
+        """Cleanup when the cog is unloaded."""
+        self.download_folder.cleanup()
 
 async def setup(bot):
     await bot.add_cog(Tracker(bot))
