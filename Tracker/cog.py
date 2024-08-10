@@ -106,11 +106,6 @@ class Tracker(commands.Cog):
         if message.channel.id in exempt_channels:
             return
 
-        # Preemptively store the attachment URL
-        attachment_url = None
-        if message.attachments:
-            attachment_url = message.attachments[0].url
-
         report_channel_id = await self.config.report_channel()
         if report_channel_id:
             report_channel = self.bot.get_channel(report_channel_id)
@@ -121,12 +116,14 @@ class Tracker(commands.Cog):
                 )
                 embed.set_thumbnail(url=message.author.avatar.url)
                 embed.add_field(name="User", value=f"{message.author.mention}", inline=False)
+                
                 if message.content:
                     embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
 
-                # Use the preemptively stored attachment URL
-                if attachment_url:
-                    embed.set_image(url=attachment_url)
+                # Checking for attachments and adding the first attachment as the embed's image
+                if message.attachments:
+                    attachment = message.attachments[0]
+                    embed.set_image(url=attachment.url)
 
                 await report_channel.send(embed=embed)
 
