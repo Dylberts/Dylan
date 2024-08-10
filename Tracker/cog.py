@@ -8,7 +8,7 @@ class Tracker(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
-        self.temp_folder = os.path.join(os.getcwd(), "temp_attachments")  # Use an absolute path
+        self.temp_folder = os.path.join(os.getcwd(), "temp_photo_tracking")  # Use an absolute path
 
         try:
             # Ensure the temporary folder exists
