@@ -115,9 +115,6 @@ class Tracker(commands.Cog):
                     attachment = before.attachments[0]
                     file_path = await self.download_attachment(attachment, attachment.filename)
                     file = discord.File(file_path, filename=attachment.filename)
-
-                    # Add "Original Message" field even for attachments
-                    embed.add_field(name="Original Message", value="(Attachment below)", inline=False)
                     embed.set_image(url=f"attachment://{attachment.filename}")
                     await report_channel.send(embed=embed, file=file)
                     
@@ -149,12 +146,8 @@ class Tracker(commands.Cog):
                 )
                 embed.set_thumbnail(url=message.author.avatar.url)
                 embed.add_field(name="User", value=f"{message.author.mention}", inline=False)
-                
-                # Add "Original Message" field even if there's no text content
                 if message.content:
                     embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
-                else:
-                    embed.add_field(name="Original Message", value="(Attachment below)", inline=False)
 
                 # Handle attachments if present
                 if message.attachments:
