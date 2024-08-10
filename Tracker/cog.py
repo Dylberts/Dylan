@@ -1,13 +1,19 @@
 import discord
 from redbot.core import commands, Config
 from datetime import datetime
+import aiohttp
+import os
 
 class Tracker(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_global(enabled=False, report_channel=None, exempt_channels=[])
-        self.message_attachments = {}  # Dictionary to store message attachments before deletion
+        self.download_folder = "downloads"  # Folder to store downloaded images
+
+        # Ensure the download folder exists
+        if not os.path.exists(self.download_folder):
+            os.makedirs(self.download_folder)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -107,9 +113,6 @@ class Tracker(commands.Cog):
         if message.channel.id in exempt_channels:
             return
 
-        # Retrieve the attachment URLs from the pre-stored dictionary
-        attachments = self.message_attachments.pop(message.id, [])
-
         report_channel_id = await self.config.report_channel()
         if report_channel_id:
             report_channel = self.bot.get_channel(report_channel_id)
@@ -120,21 +123,36 @@ class Tracker(commands.Cog):
                 )
                 embed.set_thumbnail(url=message.author.avatar.url)
                 embed.add_field(name="User", value=f"{message.author.mention}", inline=False)
-                
+
                 if message.content:
                     embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
 
-                # If attachments exist, add the first one as the embed's image
-                if attachments:
-                    embed.set_image(url=attachments[0])
+                # Download and re-upload the image/video
+                for attachment in message.attachments:
+                    file_path = await self.download_file(attachment.url, attachment.filename)
+                    if file_path:
+                        file = discord.File(file_path)
+                        embed.set_image(url=f"attachment://{attachment.filename}")
+                        await report_channel.send(embed=embed, file=file)
+                        os.remove(file_path)  # Clean up the file after sending
+                    else:
+                        await report_channel.send(embed=embed)
+                else:
+                    await report_channel.send(embed=embed)
 
-                await report_channel.send(embed=embed)
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        """Preemptively store attachment URLs when a message is sent."""
-        if message.attachments:
-            self.message_attachments[message.id] = [attachment.url for attachment in message.attachments]
+    async def download_file(self, url, filename):
+        """Download a file from a given URL and save it locally."""
+        file_path = os.path.join(self.download_folder, filename)
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    if response.status == 200:
+                        with open(file_path, 'wb') as f:
+                            f.write(await response.read())
+                        return file_path
+        except Exception as e:
+            print(f"Failed to download {url}: {e}")
+        return None
 
 async def setup(bot):
     await bot.add_cog(Tracker(bot))
