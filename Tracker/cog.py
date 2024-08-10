@@ -76,9 +76,8 @@ class Tracker(commands.Cog):
         async with aiohttp.ClientSession() as session:
             async with session.get(attachment.url) as response:
                 if response.status == 200:
-                    f = await aiofiles.open(file_path, mode='wb')
-                    await f.write(await response.read())
-                    await f.close()
+                    async with aiofiles.open(file_path, mode='wb') as f:
+                        await f.write(await response.read())
         return file_path
 
     @commands.Cog.listener()
@@ -150,17 +149,24 @@ class Tracker(commands.Cog):
                 if message.content:
                     embed.add_field(name="Original Message", value=f"> {message.content}", inline=False)
 
-                # If the message had an attachment (image/video), include it
+                # Handle attachments if present
                 if message.attachments:
                     attachment = message.attachments[0]
+                    
+                    # Download the attachment to a temporary file
                     file_path = await self.download_attachment(attachment, attachment.filename)
                     file = discord.File(file_path, filename=attachment.filename)
+                    
+                    # Set the image in the embed
                     embed.set_image(url=f"attachment://{attachment.filename}")
+                    
+                    # Send the embed with the attached file
                     await report_channel.send(embed=embed, file=file)
                     
                     # Clean up the temporary file
                     os.remove(file_path)
                 else:
+                    # If no attachments, send just the embed
                     await report_channel.send(embed=embed)
 
 async def setup(bot):
