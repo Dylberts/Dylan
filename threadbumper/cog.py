@@ -3,24 +3,26 @@ from redbot.core.bot import Red
 from discord import Thread
 import asyncio
 
-class threadbumper(commands.Cog):
+class ThreadBumper(commands.Cog):
     """Cog to keep threads alive by silently bumping them."""
 
     def __init__(self, bot: Red):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=1234567890)
         self.config.register_guild(enabled=True)
-        self.bumping_task = None
+        self.bumping_tasks = {}
 
-        # Start the bumping task if enabled
+        # Start the bumping task for all guilds
         self.bot.loop.create_task(self.initialize_bumper())
 
     async def initialize_bumper(self):
         await self.bot.wait_until_ready()
         for guild in self.bot.guilds:
-            if await self.config.guild(guild).enabled():
-                if not self.bumping_task:
-                    self.bumping_task = self.bot.loop.create_task(self.bump_threads(guild))
+            enabled = await self.config.guild(guild).enabled()
+            if enabled or enabled is None:
+                await self.config.guild(guild).enabled.set(True)  # Set to True by default
+                if guild.id not in self.bumping_tasks:
+                    self.bumping_tasks[guild.id] = self.bot.loop.create_task(self.bump_threads(guild))
 
     @commands.group()
     @commands.guild_only()
@@ -34,17 +36,17 @@ class threadbumper(commands.Cog):
         """Enable the thread bumper."""
         await self.config.guild(ctx.guild).enabled.set(True)
         await ctx.send("Understood! Thread bumper is now: **enabled**.")
-        if not self.bumping_task:
-            self.bumping_task = self.bot.loop.create_task(self.bump_threads(ctx.guild))
+        if ctx.guild.id not in self.bumping_tasks:
+            self.bumping_tasks[ctx.guild.id] = self.bot.loop.create_task(self.bump_threads(ctx.guild))
 
     @threadbumper.command(name="disable")
     async def disable_bumper(self, ctx):
         """Disable the thread bumper."""
         await self.config.guild(ctx.guild).enabled.set(False)
         await ctx.send("Understood! Thread bumper is now: **disabled**.")
-        if self.bumping_task:
-            self.bumping_task.cancel()
-            self.bumping_task = None
+        if ctx.guild.id in self.bumping_tasks:
+            self.bumping_tasks[ctx.guild.id].cancel()
+            del self.bumping_tasks[ctx.guild.id]
 
     async def bump_threads(self, guild):
         await self.bot.wait_until_ready()
@@ -69,8 +71,8 @@ class threadbumper(commands.Cog):
             await asyncio.sleep(71 * 60 * 60)  # Check every 71 hours
 
     def cog_unload(self):
-        if self.bumping_task:
-            self.bumping_task.cancel()
+        for task in self.bumping_tasks.values():
+            task.cancel()
 
 def setup(bot: Red):
-    bot.add_cog(threadbumper(bot))
+    bot.add_cog(ThreadBumper(bot))
