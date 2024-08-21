@@ -8,12 +8,9 @@ class ThreadBumper(commands.Cog):
 
     def __init__(self, bot: Red):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=1234567890)
+        self.config = Config.get_conf(self, identifier: 1234567890)
         self.config.register_guild(enabled=True)
         self.bumping_tasks = {}
-
-        # Start the bumping task for all guilds
-        self.bot.loop.create_task(self.initialize_bumper())
 
     async def initialize_bumper(self):
         await self.bot.wait_until_ready()
@@ -74,5 +71,5 @@ class ThreadBumper(commands.Cog):
         for task in self.bumping_tasks.values():
             task.cancel()
 
-def setup(bot: Red):
-    bot.add_cog(ThreadBumper(bot))
+    async def cog_load(self):
+        await self.initialize_bumper()
