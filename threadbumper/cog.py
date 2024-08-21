@@ -8,7 +8,7 @@ class ThreadBumper(commands.Cog):
 
     def __init__(self, bot: Red):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier: 1234567890)
+        self.config = Config.get_conf(self, identifier=1234567890)  # Corrected syntax
         self.config.register_guild(enabled=True)
         self.bumping_tasks = {}
 
