@@ -1,4 +1,5 @@
 from .cog import ThreadBumper
 
-def setup(bot: Red):
-    bot.add_cog(ThreadBumper(bot))
+
+async def setup(bot):
+    await bot.add_cog(ThreadBumper(bot))
