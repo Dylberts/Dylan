@@ -31,7 +31,7 @@ class Post(commands.Cog):
         await ctx.send(f"Thread channel set to {channel.mention}")
 
     @post.command()
-    async def forum(self, ctx, title: str, *, description: str):
+    async def forum(self, ctx, title: str, *, description: str = None):
         """Create a new thread in the forum channel"""
         channel_id = await self.config.guild(ctx.guild).forum_channel()
         if not channel_id:
@@ -43,11 +43,7 @@ class Post(commands.Cog):
             await ctx.send("Forum channel not found.")
             return
 
-        if not description:
-            await ctx.send("Description cannot be empty.")
-            return
-
-        # Create the thread with the provided title and description in the forum channel
+        # Create the thread with the provided title and optional description in the forum channel
         thread = await forum_channel.create_thread(name=title, content=description, auto_archive_duration=1440)
         embed = discord.Embed(
             title="Forum Thread Created",
@@ -57,7 +53,7 @@ class Post(commands.Cog):
         await ctx.send(embed=embed)
 
     @post.command()
-    async def thread(self, ctx, title: str, *, message: str):
+    async def thread(self, ctx, title: str, *, message: str = None):
         """Create a new thread in the specified thread channel"""
         channel_id = await self.config.guild(ctx.guild).thread_channel()
         if not channel_id:
@@ -69,13 +65,14 @@ class Post(commands.Cog):
             await ctx.send("Thread channel not found.")
             return
 
-        if not message:
-            await ctx.send("Message cannot be empty.")
-            return
-
-        # Send the initial message and create a thread in the specified text channel
-        msg = await thread_channel.send(message)
-        thread = await msg.create_thread(name=title, auto_archive_duration=1440)
+        # Send the initial message (if provided) and create a thread in the specified text channel
+        if message:
+            msg = await thread_channel.send(message)
+            thread = await msg.create_thread(name=title, auto_archive_duration=1440)
+        else:
+            # If no message is provided, create an empty thread
+            thread = await thread_channel.create_thread(name=title, auto_archive_duration=1440)
+            
         embed = discord.Embed(
             title="Thread Created",
             description=f"[Click here to view it](https://discord.com/channels/{ctx.guild.id}/{thread_channel.id}/{thread.id})",
